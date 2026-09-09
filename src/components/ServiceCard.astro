@@ -1,0 +1,6 @@
+---
+interface Props { title: string; text: string; index?: number }
+const { title, text, index=0 } = Astro.props;
+const icons = ['◌','↗','⌘','≋','◫','◈'];
+---
+<article class="card"><div class="icon-box" aria-hidden="true">{icons[index % icons.length]}</div><h3>{title}</h3><p>{text}</p></article>

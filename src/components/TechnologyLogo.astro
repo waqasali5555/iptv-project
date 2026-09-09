@@ -1,0 +1,9 @@
+---
+interface Props { logo: string; logoAlt: string; decorative?: boolean; }
+const { logo, logoAlt, decorative = false } = Astro.props;
+const logos = import.meta.glob('../assets/logos/**/*.svg', { eager: true, import: 'default', query: '?url' }) as Record<string, string>;
+const src = logos[`../assets/logos/${logo}.svg`];
+---
+<div class="technology-logo" aria-hidden={decorative ? 'true' : undefined}>
+  {src ? <img src={src} alt={decorative ? '' : logoAlt} width="56" height="56" loading="lazy" decoding="async" /> : <span class="text-primary" aria-hidden="true">◈</span>}
+</div>

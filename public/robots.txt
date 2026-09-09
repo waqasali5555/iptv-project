@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://iptvottinfrastructure.com/sitemap-index.xml

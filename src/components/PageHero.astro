@@ -1,0 +1,5 @@
+---
+interface Props { eyebrow: string; title: string; text: string; }
+const { eyebrow, title, text } = Astro.props;
+---
+<section class="grid-bg relative overflow-hidden border-b border-border py-20 md:py-28"><div class="orb -right-32 -top-32 size-96 bg-secondary/15"></div><div class="shell relative"><p class="eyebrow reveal">{eyebrow}</p><h1 class="display mt-4 max-w-4xl reveal">{title}</h1><p class="lede mt-5 reveal">{text}</p></div></section>

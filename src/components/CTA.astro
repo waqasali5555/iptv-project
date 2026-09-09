@@ -1,0 +1,6 @@
+---
+import { site } from '../data/site';
+interface Props { title?: string; text?: string; action?: string }
+const { title='Ready to strengthen your streaming infrastructure?', text='Start with a practical conversation about your architecture, operations or technical issue.', action='Get a Free Consultation' } = Astro.props;
+---
+<section class="section"><div class="shell"><div class="cta-panel relative overflow-hidden rounded-2xl border border-border p-7 md:p-12"><div class="orb -right-16 -top-16 size-64 bg-primary/10"></div><p class="eyebrow">Infrastructure support</p><h2 class="mt-3 max-w-2xl text-3xl font-bold tracking-tight md:text-4xl">{title}</h2><p class="mt-3 max-w-xl">{text}</p><div class="mt-6 flex flex-wrap gap-3"><a class="btn btn-primary" href={site.whatsapp} target="_blank" rel="noopener noreferrer">{action} <span aria-hidden="true">↗</span></a><a class="btn btn-secondary" href={`mailto:${site.email}`}>Email us</a></div></div></div></section>
