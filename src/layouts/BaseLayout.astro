@@ -2,20 +2,68 @@
 import '../styles/global.css';
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
+import ChatWidget from '../components/ChatWidget.astro';
 import { site } from '../data/site';
-interface Props { title: string; description: string; }
-const { title, description } = Astro.props;
+interface Props {
+  title: string;
+  description: string;
+  noindex?: boolean;
+  showPublicChat?: boolean;
+}
+const { title, description, noindex = false, showPublicChat = true } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 ---
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta charset="utf-8" />
+    <script is:inline>document.documentElement.classList.add('js-anim');</script><meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} /><link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
     <meta name="theme-color" content="#07111f" /><title>{title}</title>
     <meta property="og:type" content="website" /><meta property="og:title" content={title} /><meta property="og:description" content={description} /><meta property="og:url" content={canonical} /><meta property="og:site_name" content={site.name} />
     <meta name="twitter:card" content="summary" /><meta name="twitter:title" content={title} /><meta name="twitter:description" content={description} />
     <script type="application/ld+json" set:html={JSON.stringify({ '@context':'https://schema.org', '@type':'ProfessionalService', name:site.name, description, url:Astro.site, email:site.email, sameAs:[site.linkedin,site.facebook], areaServed:'Worldwide', serviceType:'IPTV and OTT technical infrastructure services' })} />
   </head>
-  <body><Navbar /><main><slot /></main><Footer /><a class="fixed bottom-4 right-4 z-50 inline-flex min-h-12 items-center gap-2 rounded-full bg-success px-4 text-sm font-bold text-[#020617] shadow-xl transition hover:-translate-y-1" href={site.whatsapp} target="_blank" rel="noopener noreferrer" aria-label="Chat on WhatsApp">↗ WhatsApp</a></body>
+  <body><div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div><Navbar /><main><slot /></main><Footer />{showPublicChat && <><a class="wa-fab fixed bottom-20 right-4 z-50 inline-flex min-h-12 items-center gap-2 rounded-full bg-success px-4 text-sm font-bold text-[#020617] shadow-xl transition hover:-translate-y-1" href={site.whatsapp} target="_blank" rel="noopener noreferrer" aria-label="Chat on WhatsApp">↗ WhatsApp</a><ChatWidget /></>}<script>
+  // Staggered scroll-reveal for page content.
+  const revealSel = 'main .eyebrow, main .display, main .section-title, main .lede, main .card, main .surface, main .cta-panel, main .btn, main .prose > *, main .grid > *, main .grid-cards > *';
+  const targets = Array.from(document.querySelectorAll(revealSel));
+
+  // Assign staggered delays per parent group.
+  const groups = new Map();
+  for (const el of targets) {
+    const parent = el.parentElement;
+    if (!parent) continue;
+    if (!groups.has(parent)) groups.set(parent, []);
+    groups.get(parent).push(el);
+  }
+  for (const list of groups.values()) {
+    list.forEach((el, i) => el.style.setProperty('--reveal-delay', `${Math.min(i, 6) * 75}ms`));
+  }
+
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('revealed');
+          io.unobserve(entry.target);
+        }
+      }
+    }, { threshold: 0, rootMargin: '0px 0px -60px 0px' });
+    targets.forEach((el) => io.observe(el));
+  } else {
+    targets.forEach((el) => el.classList.add('revealed'));
+  }
+
+  // Scroll progress bar.
+  const bar = document.getElementById('scroll-progress');
+  const updateBar = () => {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    if (bar) bar.style.width = `${max > 0 ? (window.scrollY / max) * 100 : 0}%`;
+  };
+  document.addEventListener('scroll', updateBar, { passive: true });
+  updateBar();
+</script>
+</body>
 </html>
