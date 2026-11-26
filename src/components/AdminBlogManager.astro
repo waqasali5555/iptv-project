@@ -1,6 +1,6 @@
-<section class="admin-cms-panel" aria-labelledby="admin-blog-heading">
-  <div class="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-    <form id="admin-blog-form" class="surface grid gap-4 p-5 md:p-6">
+<section class="admin-cms-panel w-full min-w-0" aria-labelledby="admin-blog-heading">
+  <div class="grid min-w-0 gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+    <form id="admin-blog-form" class="surface grid w-full min-w-0 gap-4 p-5 md:p-6">
       <div class="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
         <div>
           <p class="eyebrow">Blog CMS</p>
@@ -156,13 +156,18 @@
       </div>
     </form>
 
-    <aside class="surface flex flex-col overflow-hidden">
+    <aside class="surface flex w-full min-w-0 flex-col overflow-hidden">
       <div class="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
-        <div>
+        <div class="min-w-0">
           <h3 class="text-base font-bold text-foreground">All Blog Posts</h3>
           <p class="text-xs text-muted">Published and draft articles</p>
         </div>
-        <span id="admin-blog-count" class="admin-conversation-count">0</span>
+        <span
+          id="admin-blog-count"
+          class="inline-grid min-h-7 min-w-7 shrink-0 place-items-center rounded-full bg-cyan-500/15 px-2 text-xs font-bold text-cyan-300"
+        >
+          0
+        </span>
       </div>
 
       <div id="admin-blog-seed-wrap" class="hidden border-b border-border bg-primary/5 p-4">
@@ -172,8 +177,8 @@
         </button>
       </div>
 
-      <div id="admin-blog-list" class="grid max-h-[44rem] divide-y divide-border overflow-y-auto">
-        <p class="p-5 text-sm text-muted">Sign in to manage blog posts.</p>
+      <div id="admin-blog-list" class="flex max-h-[44rem] w-full min-w-0 flex-col gap-3 overflow-y-auto p-4">
+        <p class="text-sm text-muted">Sign in to manage blog posts.</p>
       </div>
     </aside>
   </div>
@@ -250,30 +255,34 @@
     if (seedWrap) seedWrap.classList.toggle('hidden', posts.length > 0);
 
     if (!posts.length) {
-      listEl.innerHTML = '<p class="p-5 text-sm text-muted">No blog posts found.</p>';
+      listEl.innerHTML = '<p class="text-sm text-slate-300">No blog posts found.</p>';
       return;
     }
 
     listEl.innerHTML = posts
       .map(
         (post) => `
-      <article class="grid gap-3 p-4 hover:bg-primary/5" data-post-id="${escapeHtml(post.id)}">
-        <div class="flex items-start justify-between gap-2">
-          <div class="min-w-0">
-            <h4 class="truncate text-sm font-bold text-foreground">${escapeHtml(post.title)}</h4>
-            <p class="mt-0.5 truncate text-xs text-muted-dark">${escapeHtml(post.category)} • /blog/${escapeHtml(post.slug)}/</p>
+      <article class="w-full min-w-0 bg-slate-900/80 border border-slate-800 text-slate-100 rounded-xl p-4 flex flex-col gap-3" data-post-id="${escapeHtml(post.id)}">
+        <div class="flex items-start justify-between gap-3 min-w-0">
+          <div class="min-w-0 flex-1">
+            <h4 class="text-sm font-bold text-slate-100 break-words">${escapeHtml(post.title)}</h4>
+            <p class="mt-1 text-xs text-slate-400 break-all">${escapeHtml(post.category)} • /blog/${escapeHtml(post.slug)}/</p>
           </div>
-          <span class="admin-status ${post.published ? 'admin-status--open' : 'admin-status--closed'}">
+          <span class="shrink-0 inline-flex items-center rounded-full px-2.5 py-1 text-[0.7rem] font-bold ${
+            post.published
+              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+              : 'bg-slate-800 text-slate-300 border border-slate-700'
+          }">
             ${post.published ? 'Published' : 'Draft'}
           </span>
         </div>
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <span class="text-[0.7rem] text-muted-dark">Updated ${escapeHtml(formatDisplayDate(post.updated_at || post.created_at))}</span>
+        <div class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800/80 pt-3">
+          <span class="text-[0.7rem] text-slate-400">Updated ${escapeHtml(formatDisplayDate(post.updated_at || post.created_at))}</span>
           <div class="flex flex-wrap gap-1.5">
-            <button type="button" data-blog-action="edit" data-id="${escapeHtml(post.id)}" class="cursor-pointer rounded-md border border-border px-2.5 py-1 text-xs font-semibold text-foreground hover:border-primary">Edit</button>
-            <button type="button" data-blog-action="toggle" data-id="${escapeHtml(post.id)}" class="cursor-pointer rounded-md border border-border px-2.5 py-1 text-xs font-semibold text-primary hover:border-primary">${post.published ? 'Unpublish' : 'Publish'}</button>
-            <a href="/blog/post/?slug=${encodeURIComponent(post.slug)}" target="_blank" rel="noopener noreferrer" class="rounded-md border border-border px-2.5 py-1 text-xs font-semibold text-muted hover:border-primary hover:text-foreground">View</a>
-            <button type="button" data-blog-action="delete" data-id="${escapeHtml(post.id)}" class="cursor-pointer rounded-md border border-red-500/40 px-2.5 py-1 text-xs font-semibold text-red-300 hover:bg-red-500/15">Delete</button>
+            <button type="button" data-blog-action="edit" data-id="${escapeHtml(post.id)}" class="cursor-pointer rounded-md border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-100 hover:border-cyan-400">Edit</button>
+            <button type="button" data-blog-action="toggle" data-id="${escapeHtml(post.id)}" class="cursor-pointer rounded-md border border-cyan-500/40 bg-cyan-500/15 px-2.5 py-1 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/25">${post.published ? 'Unpublish' : 'Publish'}</button>
+            <a href="/blog/post/?slug=${encodeURIComponent(post.slug)}" target="_blank" rel="noopener noreferrer" class="rounded-md border border-slate-700 bg-slate-800/60 px-2.5 py-1 text-xs font-semibold text-slate-200 hover:border-cyan-400 hover:text-white">View</a>
+            <button type="button" data-blog-action="delete" data-id="${escapeHtml(post.id)}" class="cursor-pointer rounded-md border border-red-500/40 bg-red-500/15 px-2.5 py-1 text-xs font-semibold text-red-300 hover:bg-red-500/25">Delete</button>
           </div>
         </div>
       </article>
