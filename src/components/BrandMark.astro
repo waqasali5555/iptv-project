@@ -1,0 +1,44 @@
+---
+interface Props {
+  class?: string;
+  idPrefix?: string;
+}
+
+const { class: className = 'size-8', idPrefix = 'brand' } = Astro.props;
+const gradId = `${idPrefix}-plextech-grad`;
+const bgId = `${idPrefix}-plextech-bg`;
+---
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 64 64"
+  fill="none"
+  class:list={['shrink-0', className]}
+  aria-hidden="true"
+>
+  <defs>
+    <linearGradient id={gradId} x1="16" y1="14" x2="48" y2="50" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38d9f5" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+    <linearGradient id={bgId} x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0c1c30" />
+      <stop offset="100%" stop-color="#07111f" />
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="15" fill={`url(#${bgId})`} stroke="#1d3954" stroke-width="2.2" />
+  <path
+    fill-rule="evenodd"
+    clip-rule="evenodd"
+    d="M17 15H35L47 25.5L35 36H25V49H17V15ZM25 22V29H33.5L37.5 25.5L33.5 22H25Z"
+    fill={`url(#${gradId})`}
+  />
+  <path
+    d="M31 44.5H39.5"
+    stroke="#38d9f5"
+    stroke-width="2.8"
+    stroke-linecap="round"
+  />
+  <circle cx="30.5" cy="44.5" r="2.2" fill="#38d9f5" />
+  <circle cx="43.5" cy="44.5" r="4.5" fill="#38d9f5" />
+  <circle cx="43.5" cy="44.5" r="1.8" fill="#07111f" />
+</svg>
