@@ -1,11 +1,12 @@
 ---
 import { nav, site } from '../data/site';
 import BrandMark from './BrandMark.astro';
+import WhatsAppIcon from './WhatsAppIcon.astro';
 const path = Astro.url.pathname;
 ---
 <header class="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-xl">
-  <div class="shell flex min-h-18 items-center justify-between gap-4">
-    <a href="/" class="flex items-center gap-2.5 font-bold tracking-tight text-foreground">
+  <div class="shell flex min-h-18 items-center justify-between gap-3">
+    <a href="/" class="flex shrink-0 items-center gap-2.5 font-bold tracking-tight text-foreground">
       <BrandMark class="size-9" idPrefix="nav" />
       <span class="flex flex-col leading-none">
         <span class="text-base font-extrabold tracking-tight">
@@ -17,13 +18,13 @@ const path = Astro.url.pathname;
       </span>
     </a>
 
-    <nav class="hidden items-center gap-3.5 xl:flex 2xl:gap-5" aria-label="Primary navigation">
+    <nav class="hidden items-center gap-3 xl:flex 2xl:gap-4" aria-label="Primary navigation">
       {
         nav.map(([label, href]) => (
           <a
             href={href}
             class:list={[
-              'whitespace-nowrap text-[.76rem] font-semibold text-muted hover:text-foreground',
+              'whitespace-nowrap text-[.75rem] font-semibold text-muted hover:text-foreground',
               (path === href || (href !== '/' && path.startsWith(href))) && 'text-primary',
             ]}
           >
@@ -33,11 +34,22 @@ const path = Astro.url.pathname;
       }
     </nav>
 
-    <div class="flex items-center gap-2">
+    <div class="flex shrink-0 items-center gap-2">
+      <a
+        href={site.whatsapp}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`Chat on WhatsApp (${site.phone})`}
+        class="hidden min-h-10 items-center gap-1.5 rounded-full border border-emerald-500/45 bg-emerald-500/15 px-3 text-xs font-bold whitespace-nowrap text-emerald-300 transition hover:-translate-y-0.5 hover:border-emerald-400 hover:bg-emerald-500 hover:text-[#020617] sm:inline-flex"
+      >
+        <WhatsAppIcon class="size-3.5" />
+        <span>WhatsApp</span>
+      </a>
+
       <button
         type="button"
         data-open-consultation
-        class="btn btn-primary hidden min-h-10 cursor-pointer px-3.5 text-xs sm:inline-flex"
+        class="btn btn-primary hidden min-h-10 cursor-pointer px-3.5 text-xs whitespace-nowrap sm:inline-flex"
       >
         Free Consultation
       </button>
@@ -56,7 +68,7 @@ const path = Astro.url.pathname;
                 href={href}
                 class:list={[
                   'rounded-md px-3 py-2 text-sm text-muted hover:bg-card-elevated hover:text-foreground',
-                  path === href && 'bg-card-elevated text-primary',
+                  (path === href || (href !== '/' && path.startsWith(href))) && 'bg-card-elevated text-primary',
                 ]}
               >
                 {label}
@@ -64,13 +76,21 @@ const path = Astro.url.pathname;
             ))
           }
           <a
-            class="btn btn-primary mt-2 text-sm"
+            class="mt-2 inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-emerald-500/45 bg-emerald-500/15 px-4 text-sm font-bold text-emerald-300 transition hover:bg-emerald-500 hover:text-[#020617]"
             href={site.whatsapp}
             target="_blank"
             rel="noopener noreferrer"
           >
-            WhatsApp {site.phone}
+            <WhatsAppIcon class="size-4" />
+            <span>WhatsApp {site.phone}</span>
           </a>
+          <button
+            type="button"
+            data-open-consultation
+            class="btn btn-primary mt-1.5 min-h-10 cursor-pointer text-sm"
+          >
+            Free Consultation
+          </button>
         </nav>
       </details>
     </div>

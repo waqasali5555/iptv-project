@@ -66,7 +66,7 @@ const renderedHtml = renderMarkdown(post.content);
         }
       </header>
 
-      <div id="post-content" class="prose mt-10 max-w-none" set:html={renderedHtml} />
+      <div id="post-content" data-live-prose class="prose mt-10 max-w-none" set:html={renderedHtml} />
 
       <div class="cta-panel relative mt-14 overflow-hidden rounded-2xl border border-border p-7 md:p-10">
         <div class="orb -right-16 -top-16 size-56 bg-primary/10"></div>

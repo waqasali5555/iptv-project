@@ -124,15 +124,6 @@ const articleSchema = article
     {
       showPublicChat && (
         <>
-          <a
-            class="wa-fab fixed bottom-20 right-4 z-50 inline-flex min-h-12 items-center gap-2 rounded-full bg-success px-4 text-sm font-bold text-[#020617] shadow-xl transition hover:-translate-y-1"
-            href={site.whatsapp}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`Chat on WhatsApp (${site.phone})`}
-          >
-            ↗ WhatsApp
-          </a>
           <ChatWidget />
           <ConsultationModal />
         </>

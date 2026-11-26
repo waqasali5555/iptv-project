@@ -30,7 +30,7 @@ import { site } from '../../data/site';
           </div>
         </header>
 
-        <div id="dyn-content" class="prose mt-10 max-w-none"></div>
+        <div id="dyn-content" data-live-prose class="prose mt-10 max-w-none"></div>
 
         <div class="cta-panel relative mt-14 overflow-hidden rounded-2xl border border-border p-7 md:p-10">
           <div class="orb -right-16 -top-16 size-56 bg-primary/10"></div>
@@ -107,7 +107,10 @@ import { site } from '../../data/site';
     if (excerptEl) excerptEl.textContent = post.excerpt;
     if (categoryEl) categoryEl.textContent = post.category;
     if (dateEl) dateEl.textContent = `Published ${formatDisplayDate(post.created_at)}`;
-    if (contentEl) contentEl.innerHTML = renderMarkdown(post.content);
+    if (contentEl) {
+      contentEl.innerHTML = renderMarkdown(post.content || '');
+      contentEl.querySelectorAll('*').forEach((node) => node.classList.add('revealed'));
+    }
 
     if (post.cover_image_url && coverWrap && coverImg) {
       coverImg.src = post.cover_image_url;
@@ -124,7 +127,12 @@ import { site } from '../../data/site';
     document.title = post.meta_title?.trim() || `${post.title} | PlexTech`;
 
     if (stateEl) stateEl.hidden = true;
-    if (wrapperEl) wrapperEl.hidden = false;
+    if (wrapperEl) {
+      wrapperEl.hidden = false;
+      wrapperEl
+        .querySelectorAll('.eyebrow, .lede, .cta-panel, .btn')
+        .forEach((el) => el.classList.add('revealed'));
+    }
   };
 
   void loadPost();
