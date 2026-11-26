@@ -21,6 +21,7 @@ export interface BlogPost {
   meta_title: string;
   meta_description: string;
   published: boolean;
+  published_at: string;
   created_at: string;
   updated_at: string;
 }
@@ -86,6 +87,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
     meta_description:
       'Eliminate peak-hour IPTV buffering and stream freezing with FFmpeg ABR GOP alignment, TCP BBR congestion control, and Nginx/CDN edge caching.',
     published: true,
+    published_at: '2026-11-26T08:00:00.000Z',
     created_at: '2026-11-26T08:00:00.000Z',
     updated_at: '2026-11-26T08:00:00.000Z',
   },
@@ -137,20 +139,40 @@ export const formatDisplayDate = (iso: string): string => {
   }).format(date);
 };
 
+export const formatDisplayDateTime = (iso: string): string => {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(date);
+};
+
+export const isPostDue = (post: Pick<BlogPost, 'published' | 'published_at' | 'created_at'>): boolean => {
+  if (!post.published) return false;
+  const ts = new Date(post.published_at || post.created_at).getTime();
+  return !Number.isNaN(ts) && ts <= Date.now();
+};
+
 /**
- * Fetches published blog posts from Supabase, falling back to seeded starter
- * posts when Supabase is unreachable (e.g., offline build) or unseeded.
+ * Fetches published blog posts whose published_at <= now from Supabase, falling
+ * back to seeded starter posts when Supabase is unreachable or unseeded.
  */
 export async function fetchPublishedBlogPosts(): Promise<{
   posts: BlogPost[];
   fromSupabase: boolean;
 }> {
   try {
+    const nowIso = new Date().toISOString();
     const { data, error } = await supabase
       .from('blog_posts')
       .select('*')
       .eq('published', true)
-      .order('created_at', { ascending: false });
+      .lte('published_at', nowIso)
+      .order('published_at', { ascending: false });
 
     if (!error && Array.isArray(data) && data.length > 0) {
       return { posts: data as BlogPost[], fromSupabase: true };
@@ -159,19 +181,21 @@ export async function fetchPublishedBlogPosts(): Promise<{
     // Offline/uninitialized build fallback handled below.
   }
 
-  return { posts: SEED_BLOG_POSTS, fromSupabase: false };
+  return { posts: SEED_BLOG_POSTS.filter(isPostDue), fromSupabase: false };
 }
 
 /**
- * Fetches a single published blog post by slug from Supabase or seed fallback.
+ * Fetches a single published blog post by slug where published_at <= now.
  */
 export async function fetchPublishedBlogPostBySlug(slug: string): Promise<BlogPost | null> {
   try {
+    const nowIso = new Date().toISOString();
     const { data, error } = await supabase
       .from('blog_posts')
       .select('*')
       .eq('slug', slug)
       .eq('published', true)
+      .lte('published_at', nowIso)
       .maybeSingle();
 
     if (!error && data) {
@@ -181,7 +205,7 @@ export async function fetchPublishedBlogPostBySlug(slug: string): Promise<BlogPo
     // Fallback to seed below.
   }
 
-  return SEED_BLOG_POSTS.find((post) => post.slug === slug) ?? null;
+  return SEED_BLOG_POSTS.find((post) => post.slug === slug && isPostDue(post)) ?? null;
 }
 
 /**

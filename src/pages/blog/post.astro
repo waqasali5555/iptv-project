@@ -62,7 +62,7 @@ import { site } from '../../data/site';
 
 <script>
   import { supabase } from '../../lib/supabase';
-  import { formatDisplayDate, SEED_BLOG_POSTS, type BlogPost } from '../../lib/cms';
+  import { formatDisplayDate, isPostDue, SEED_BLOG_POSTS, type BlogPost } from '../../lib/cms';
   import { renderMarkdown } from '../../lib/markdown';
 
   const stateEl = document.getElementById('dynamic-post-state');
@@ -76,21 +76,26 @@ import { site } from '../../data/site';
     }
 
     let post: BlogPost | null = null;
+    const nowIso = new Date().toISOString();
     const { data, error } = await supabase
       .from('blog_posts')
       .select('*')
       .eq('slug', slug)
       .eq('published', true)
+      .lte('published_at', nowIso)
       .maybeSingle();
 
     if (!error && data) {
       post = data as BlogPost;
-    } else {
-      post = SEED_BLOG_POSTS.find((item) => item.slug === slug) ?? null;
+    } else if (error) {
+      post = SEED_BLOG_POSTS.find((item) => item.slug === slug && isPostDue(item)) ?? null;
     }
 
     if (!post) {
-      if (stateEl) stateEl.textContent = 'This article could not be found or is still in draft status.';
+      if (stateEl) {
+        stateEl.textContent =
+          'This article could not be found, is scheduled for future release, or is still in draft status.';
+      }
       return;
     }
 
@@ -106,7 +111,7 @@ import { site } from '../../data/site';
     if (titleEl) titleEl.textContent = post.title;
     if (excerptEl) excerptEl.textContent = post.excerpt;
     if (categoryEl) categoryEl.textContent = post.category;
-    if (dateEl) dateEl.textContent = `Published ${formatDisplayDate(post.created_at)}`;
+    if (dateEl) dateEl.textContent = `Published ${formatDisplayDate(post.published_at || post.created_at)}`;
     if (contentEl) {
       contentEl.innerHTML = renderMarkdown(post.content || '');
       contentEl.querySelectorAll('*').forEach((node) => node.classList.add('revealed'));

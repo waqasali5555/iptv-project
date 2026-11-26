@@ -142,10 +142,25 @@
         </label>
       </div>
 
-      <label class="inline-flex w-max cursor-pointer items-center gap-2.5 text-sm font-semibold text-foreground">
-        <input id="blog-published" name="published" type="checkbox" class="size-4 accent-primary" />
-        <span>Published (visible publicly on /blog and sitemap.xml)</span>
-      </label>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <label class="grid gap-1.5 text-xs font-semibold tracking-wide text-foreground uppercase">
+          Schedule / Publish Date &amp; Time
+          <input
+            id="blog-published-at"
+            name="published_at"
+            type="datetime-local"
+            class="rounded-lg border border-border bg-background px-3 py-2.5 text-sm font-normal text-foreground"
+          />
+          <span class="text-[0.7rem] font-normal tracking-normal text-muted normal-case">
+            Defaults to now. Set a future date/time with Published checked to schedule.
+          </span>
+        </label>
+
+        <label class="inline-flex cursor-pointer items-center gap-2.5 self-center text-sm font-semibold text-foreground">
+          <input id="blog-published" name="published" type="checkbox" class="size-4 accent-primary" />
+          <span>Published (live now or at scheduled time)</span>
+        </label>
+      </div>
 
       <p id="admin-blog-status" class="min-h-5 text-xs text-muted" aria-live="polite"></p>
 
@@ -186,7 +201,15 @@
 
 <script>
   import { supabase } from '../lib/supabase';
-  import { formatDisplayDate, MEDIA_BUCKET, SEED_BLOG_POSTS, slugify, type BlogPost, type CmsCategory } from '../lib/cms';
+  import {
+    formatDisplayDate,
+    formatDisplayDateTime,
+    MEDIA_BUCKET,
+    SEED_BLOG_POSTS,
+    slugify,
+    type BlogPost,
+    type CmsCategory,
+  } from '../lib/cms';
   import { renderMarkdown } from '../lib/markdown';
 
   const form = document.getElementById('admin-blog-form') as HTMLFormElement | null;
@@ -204,6 +227,7 @@
   const previewBox = document.getElementById('blog-markdown-preview');
   const metaTitleInput = document.getElementById('blog-meta-title') as HTMLInputElement | null;
   const metaDescInput = document.getElementById('blog-meta-description') as HTMLInputElement | null;
+  const publishedAtInput = document.getElementById('blog-published-at') as HTMLInputElement | null;
   const publishedInput = document.getElementById('blog-published') as HTMLInputElement | null;
   const resetBtn = document.getElementById('blog-reset-btn');
   const saveBtn = document.getElementById('blog-save-btn') as HTMLButtonElement | null;
@@ -233,9 +257,17 @@
     }
   };
 
+  const toLocalDateTimeInput = (iso?: string): string => {
+    const date = iso ? new Date(iso) : new Date();
+    const valid = Number.isNaN(date.getTime()) ? new Date() : date;
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${valid.getFullYear()}-${pad(valid.getMonth() + 1)}-${pad(valid.getDate())}T${pad(valid.getHours())}:${pad(valid.getMinutes())}`;
+  };
+
   const resetForm = () => {
     form?.reset();
     if (idInput) idInput.value = '';
+    if (publishedAtInput) publishedAtInput.value = toLocalDateTimeInput();
     slugManuallyEdited = false;
     updateCoverPreview('');
     if (previewBox && contentInput && previewToggle) {
@@ -246,8 +278,35 @@
     setStatus('');
   };
 
+  if (publishedAtInput && !publishedAtInput.value) {
+    publishedAtInput.value = toLocalDateTimeInput();
+  }
+
   const escapeHtml = (value: string) =>
     value.replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch] || ch);
+
+  const getPostBadge = (post: BlogPost) => {
+    if (!post.published) {
+      return {
+        label: 'Draft',
+        classes: 'bg-slate-800 text-slate-300 border border-slate-700',
+        scheduled: false,
+      };
+    }
+    const publishTime = new Date(post.published_at || post.created_at).getTime();
+    if (!Number.isNaN(publishTime) && publishTime > Date.now()) {
+      return {
+        label: `Scheduled (${formatDisplayDateTime(post.published_at || post.created_at)})`,
+        classes: 'bg-amber-500/15 text-amber-300 border border-amber-500/40',
+        scheduled: true,
+      };
+    }
+    return {
+      label: 'Published',
+      classes: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40',
+      scheduled: false,
+    };
+  };
 
   const renderPostsList = () => {
     if (!listEl || !countEl) return;
@@ -260,24 +319,25 @@
     }
 
     listEl.innerHTML = posts
-      .map(
-        (post) => `
+      .map((post) => {
+        const badge = getPostBadge(post);
+        const publishIso = post.published_at || post.created_at;
+        const dateLabel = badge.scheduled
+          ? `Scheduled for ${formatDisplayDateTime(publishIso)}`
+          : `Publish date ${formatDisplayDate(publishIso)}`;
+        return `
       <article class="w-full min-w-0 bg-slate-900/80 border border-slate-800 text-slate-100 rounded-xl p-4 flex flex-col gap-3" data-post-id="${escapeHtml(post.id)}">
         <div class="flex items-start justify-between gap-3 min-w-0">
           <div class="min-w-0 flex-1">
             <h4 class="text-sm font-bold text-slate-100 break-words">${escapeHtml(post.title)}</h4>
             <p class="mt-1 text-xs text-slate-400 break-all">${escapeHtml(post.category)} • /blog/${escapeHtml(post.slug)}/</p>
           </div>
-          <span class="shrink-0 inline-flex items-center rounded-full px-2.5 py-1 text-[0.7rem] font-bold ${
-            post.published
-              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-              : 'bg-slate-800 text-slate-300 border border-slate-700'
-          }">
-            ${post.published ? 'Published' : 'Draft'}
+          <span class="shrink-0 inline-flex items-center rounded-full px-2.5 py-1 text-[0.7rem] font-bold ${badge.classes}">
+            ${escapeHtml(badge.label)}
           </span>
         </div>
         <div class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800/80 pt-3">
-          <span class="text-[0.7rem] text-slate-400">Updated ${escapeHtml(formatDisplayDate(post.updated_at || post.created_at))}</span>
+          <span class="text-[0.7rem] text-slate-400">${escapeHtml(dateLabel)}</span>
           <div class="flex flex-wrap gap-1.5">
             <button type="button" data-blog-action="edit" data-id="${escapeHtml(post.id)}" class="cursor-pointer rounded-md border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-100 hover:border-cyan-400">Edit</button>
             <button type="button" data-blog-action="toggle" data-id="${escapeHtml(post.id)}" class="cursor-pointer rounded-md border border-cyan-500/40 bg-cyan-500/15 px-2.5 py-1 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/25">${post.published ? 'Unpublish' : 'Publish'}</button>
@@ -286,8 +346,8 @@
           </div>
         </div>
       </article>
-    `,
-      )
+    `;
+      })
       .join('');
   };
 
@@ -296,7 +356,7 @@
     const { data, error } = await supabase
       .from('blog_posts')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('published_at', { ascending: false });
 
     if (error) {
       setStatus(`Could not load blog posts (${error.code ?? 'error'}: ${error.message}).`, true);
@@ -370,6 +430,12 @@
     saveBtn.disabled = true;
     setStatus('Saving blog post…');
 
+    const rawPublishedAt = publishedAtInput?.value.trim();
+    const parsedPublishedAt = rawPublishedAt ? new Date(rawPublishedAt) : new Date();
+    const publishedAtIso = Number.isNaN(parsedPublishedAt.getTime())
+      ? new Date().toISOString()
+      : parsedPublishedAt.toISOString();
+
     const payload = {
       title: titleInput.value.trim(),
       slug: slugify(slugInput.value || titleInput.value),
@@ -380,6 +446,7 @@
       meta_title: metaTitleInput?.value.trim() || `${titleInput.value.trim()} | PlexTech`,
       meta_description: metaDescInput?.value.trim() || excerptInput.value.trim(),
       published: Boolean(publishedInput?.checked),
+      published_at: publishedAtIso,
     };
 
     const existingId = idInput?.value.trim();
@@ -420,6 +487,7 @@
       if (contentInput) contentInput.value = post.content;
       if (metaTitleInput) metaTitleInput.value = post.meta_title;
       if (metaDescInput) metaDescInput.value = post.meta_description;
+      if (publishedAtInput) publishedAtInput.value = toLocalDateTimeInput(post.published_at || post.created_at);
       if (publishedInput) publishedInput.checked = post.published;
       setStatus(`Editing "${post.title}"`);
       titleInput?.focus();
@@ -468,6 +536,7 @@
       meta_title: seed.meta_title,
       meta_description: seed.meta_description,
       published: seed.published,
+      published_at: seed.published_at,
     });
     if (error) {
       setStatus(`Seed failed: ${error.message}`, true);

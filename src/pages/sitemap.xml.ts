@@ -31,7 +31,7 @@ export const GET: APIRoute = async () => {
 
   const blogEntries = posts.map((post) => ({
     loc: `${SITE_URL}/blog/${post.slug}/`,
-    lastmod: (post.updated_at || post.created_at || today).split('T')[0],
+    lastmod: (post.updated_at || post.published_at || post.created_at || today).split('T')[0],
     changefreq: 'weekly',
     priority: '0.85',
   }));

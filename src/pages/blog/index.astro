@@ -70,8 +70,8 @@ const categories = ['All', ...CMS_CATEGORIES] as const;
                 }
                 <div class="flex items-center justify-between gap-2">
                   <span class="tag">{post.category}</span>
-                  <time datetime={post.created_at} class="text-xs font-medium text-muted-dark">
-                    {formatDisplayDate(post.created_at)}
+                  <time datetime={post.published_at || post.created_at} class="text-xs font-medium text-muted-dark">
+                    {formatDisplayDate(post.published_at || post.created_at)}
                   </time>
                 </div>
                 <h2 class="mt-4 text-xl font-bold text-foreground">
@@ -162,7 +162,8 @@ const categories = ['All', ...CMS_CATEGORIES] as const;
     const safeCategory = escapeHtml(post.category);
     const safeExcerpt = escapeHtml(post.excerpt);
     const safeCover = post.cover_image_url ? escapeHtml(post.cover_image_url) : '';
-    const dateText = escapeHtml(formatDisplayDate(post.created_at));
+    const displayIso = post.published_at || post.created_at;
+    const dateText = escapeHtml(formatDisplayDate(displayIso));
 
     return `
       <article class="blog-card card revealed flex flex-col justify-between gap-5 p-6" data-category="${safeCategory}">
@@ -176,7 +177,7 @@ const categories = ['All', ...CMS_CATEGORIES] as const;
           }
           <div class="flex items-center justify-between gap-2">
             <span class="tag">${safeCategory}</span>
-            <time datetime="${escapeHtml(post.created_at)}" class="text-xs font-medium text-muted-dark">${dateText}</time>
+            <time datetime="${escapeHtml(displayIso)}" class="text-xs font-medium text-muted-dark">${dateText}</time>
           </div>
           <h2 class="mt-4 text-xl font-bold text-foreground">
             <a href="${href}" class="hover:text-primary">${safeTitle}</a>
@@ -193,13 +194,15 @@ const categories = ['All', ...CMS_CATEGORIES] as const;
 
   const syncLivePosts = async () => {
     if (!grid) return;
+    const nowIso = new Date().toISOString();
     const { data, error } = await supabase
       .from('blog_posts')
       .select('*')
       .eq('published', true)
-      .order('created_at', { ascending: false });
+      .lte('published_at', nowIso)
+      .order('published_at', { ascending: false });
 
-    if (!error && Array.isArray(data) && data.length > 0) {
+    if (!error && Array.isArray(data)) {
       grid.innerHTML = (data as BlogPost[]).map(renderPostCard).join('');
       applyFilter();
     }
