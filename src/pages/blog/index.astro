@@ -1,0 +1,209 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHero from '../../components/PageHero.astro';
+import CTA from '../../components/CTA.astro';
+import { site } from '../../data/site';
+import { CMS_CATEGORIES, fetchPublishedBlogPosts, formatDisplayDate } from '../../lib/cms';
+
+const { posts } = await fetchPublishedBlogPosts();
+const prebuiltSlugs = posts.map((post) => post.slug);
+const categories = ['All', ...CMS_CATEGORIES] as const;
+---
+<BaseLayout
+  title={`Blog & Engineering Guides | ${site.name} — IPTV, Plex & NAS`}
+  description="Technical playbooks from PlexTech covering IPTV buffering fixes, FFmpeg ABR, SRT/RTMP ingest, Plex CGNAT remote access, 4K GPU transcoding, and Unraid/TrueNAS/Synology storage."
+>
+  <PageHero
+    eyebrow="Engineering Blog"
+    title="Guides, postmortems & streaming playbooks."
+    text="Field-tested tutorials for fixing IPTV buffering, configuring 4K GPU transcoding, bypassing CGNAT, and running zero-loss NAS migrations."
+  />
+
+  <section class="section">
+    <div class="shell">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div class="flex flex-wrap gap-2" role="tablist" aria-label="Filter blog posts by category">
+          {
+            categories.map((category, index) => (
+              <button
+                type="button"
+                role="tab"
+                aria-selected={index === 0 ? 'true' : 'false'}
+                data-blog-tab={category}
+                class:list={[
+                  'blog-tab cursor-pointer rounded-full border px-4 py-2 text-xs font-bold tracking-wide transition',
+                  index === 0
+                    ? 'border-primary bg-primary text-ink shadow-md shadow-primary/20'
+                    : 'border-border bg-card text-muted hover:border-primary/60 hover:text-foreground',
+                ]}
+              >
+                {category}
+              </button>
+            ))
+          }
+        </div>
+        <p class="text-sm text-muted">
+          <span id="blog-count">{posts.length}</span> article{posts.length === 1 ? '' : 's'}
+        </p>
+      </div>
+
+      <div
+        class="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+        id="blog-grid"
+        data-prebuilt-slugs={JSON.stringify(prebuiltSlugs)}
+      >
+        {
+          posts.map((post) => (
+            <article class="blog-card card flex flex-col justify-between gap-5 p-6" data-category={post.category}>
+              <div>
+                {
+                  post.cover_image_url && (
+                    <a href={`/blog/${post.slug}/`} class="mb-5 block overflow-hidden rounded-xl border border-border bg-background">
+                      <img
+                        src={post.cover_image_url}
+                        alt={post.title}
+                        loading="lazy"
+                        class="aspect-video w-full object-cover transition duration-300 hover:scale-[1.02]"
+                      />
+                    </a>
+                  )
+                }
+                <div class="flex items-center justify-between gap-2">
+                  <span class="tag">{post.category}</span>
+                  <time datetime={post.created_at} class="text-xs font-medium text-muted-dark">
+                    {formatDisplayDate(post.created_at)}
+                  </time>
+                </div>
+                <h2 class="mt-4 text-xl font-bold text-foreground">
+                  <a href={`/blog/${post.slug}/`} class="hover:text-primary">
+                    {post.title}
+                  </a>
+                </h2>
+                <p class="mt-2.5 text-sm leading-relaxed text-muted">{post.excerpt}</p>
+              </div>
+
+              <a
+                href={`/blog/${post.slug}/`}
+                class="inline-flex items-center justify-between border-t border-border/70 pt-4 text-xs font-bold text-primary hover:text-foreground"
+              >
+                <span>Read engineering guide</span>
+                <span aria-hidden="true">→</span>
+              </a>
+            </article>
+          ))
+        }
+      </div>
+
+      <p id="blog-empty" class="mt-8 hidden rounded-xl border border-border bg-card p-6 text-center text-sm text-muted">
+        No published articles in this category yet.
+      </p>
+    </div>
+  </section>
+
+  <CTA
+    title="Dealing with one of these issues right now?"
+    text="Skip trial-and-error and book a remote session with PlexTech."
+  />
+</BaseLayout>
+
+<script>
+  import { supabase } from '../../lib/supabase';
+  import { formatDisplayDate, type BlogPost } from '../../lib/cms';
+
+  const grid = document.getElementById('blog-grid');
+  const countEl = document.getElementById('blog-count');
+  const emptyEl = document.getElementById('blog-empty');
+  const tabButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-blog-tab]'));
+
+  const prebuiltSlugs = new Set<string>(
+    JSON.parse(grid?.dataset.prebuiltSlugs || '[]') as string[],
+  );
+
+  let activeCategory = 'All';
+  const activeClasses = ['border-primary', 'bg-primary', 'text-ink', 'shadow-md', 'shadow-primary/20'];
+  const inactiveClasses = ['border-border', 'bg-card', 'text-muted', 'hover:border-primary/60', 'hover:text-foreground'];
+
+  const escapeHtml = (value: string) =>
+    value.replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch] || ch);
+
+  const applyFilter = () => {
+    const cards = Array.from(document.querySelectorAll<HTMLElement>('.blog-card'));
+    let visible = 0;
+    cards.forEach((card) => {
+      const show = activeCategory === 'All' || card.dataset.category === activeCategory;
+      card.hidden = !show;
+      if (show) {
+        card.classList.add('revealed');
+        visible++;
+      }
+    });
+    if (countEl) countEl.textContent = String(visible);
+    if (emptyEl) emptyEl.classList.toggle('hidden', visible > 0);
+  };
+
+  tabButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      activeCategory = btn.dataset.blogTab || 'All';
+      tabButtons.forEach((b) => {
+        const current = b === btn;
+        b.setAttribute('aria-selected', String(current));
+        b.classList.remove(...(current ? inactiveClasses : activeClasses));
+        b.classList.add(...(current ? activeClasses : inactiveClasses));
+      });
+      applyFilter();
+    });
+  });
+
+  const renderPostCard = (post: BlogPost) => {
+    const href = prebuiltSlugs.has(post.slug)
+      ? `/blog/${encodeURIComponent(post.slug)}/`
+      : `/blog/post/?slug=${encodeURIComponent(post.slug)}`;
+    const safeTitle = escapeHtml(post.title);
+    const safeCategory = escapeHtml(post.category);
+    const safeExcerpt = escapeHtml(post.excerpt);
+    const safeCover = post.cover_image_url ? escapeHtml(post.cover_image_url) : '';
+    const dateText = escapeHtml(formatDisplayDate(post.created_at));
+
+    return `
+      <article class="blog-card card revealed flex flex-col justify-between gap-5 p-6" data-category="${safeCategory}">
+        <div>
+          ${
+            safeCover
+              ? `<a href="${href}" class="mb-5 block overflow-hidden rounded-xl border border-border bg-background">
+                   <img src="${safeCover}" alt="${safeTitle}" loading="lazy" class="aspect-video w-full object-cover transition duration-300 hover:scale-[1.02]" />
+                 </a>`
+              : ''
+          }
+          <div class="flex items-center justify-between gap-2">
+            <span class="tag">${safeCategory}</span>
+            <time datetime="${escapeHtml(post.created_at)}" class="text-xs font-medium text-muted-dark">${dateText}</time>
+          </div>
+          <h2 class="mt-4 text-xl font-bold text-foreground">
+            <a href="${href}" class="hover:text-primary">${safeTitle}</a>
+          </h2>
+          <p class="mt-2.5 text-sm leading-relaxed text-muted">${safeExcerpt}</p>
+        </div>
+        <a href="${href}" class="inline-flex items-center justify-between border-t border-border/70 pt-4 text-xs font-bold text-primary hover:text-foreground">
+          <span>Read engineering guide</span>
+          <span aria-hidden="true">→</span>
+        </a>
+      </article>
+    `;
+  };
+
+  const syncLivePosts = async () => {
+    if (!grid) return;
+    const { data, error } = await supabase
+      .from('blog_posts')
+      .select('*')
+      .eq('published', true)
+      .order('created_at', { ascending: false });
+
+    if (!error && Array.isArray(data) && data.length > 0) {
+      grid.innerHTML = (data as BlogPost[]).map(renderPostCard).join('');
+      applyFilter();
+    }
+  };
+
+  void syncLivePosts();
+</script>

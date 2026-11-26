@@ -20,6 +20,8 @@ export const nav = [
   ['Streaming', '/streaming-solutions/'],
   ['Troubleshooting', '/troubleshooting/'],
   ['Security & Monitoring', '/security-monitoring/'],
+  ['Portfolio', '/portfolio/'],
+  ['Blog', '/blog/'],
   ['Technologies', '/technologies/'],
   ['About', '/about/'],
   ['Contact', '/contact/'],

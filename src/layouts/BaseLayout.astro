@@ -6,15 +6,25 @@ import ChatWidget from '../components/ChatWidget.astro';
 import ConsultationModal from '../components/ConsultationModal.astro';
 import { site, type FaqItem } from '../data/site';
 
+interface ArticleMeta {
+  headline: string;
+  description: string;
+  publishedTime: string;
+  modifiedTime?: string;
+  image?: string | null;
+  section?: string;
+}
+
 interface Props {
   title: string;
   description: string;
   noindex?: boolean;
   showPublicChat?: boolean;
   faqItems?: readonly FaqItem[];
+  article?: ArticleMeta;
 }
 
-const { title, description, noindex = false, showPublicChat = true, faqItems } = Astro.props;
+const { title, description, noindex = false, showPublicChat = true, faqItems, article } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site ?? site.url).toString();
 
 const professionalServiceSchema = {
@@ -47,6 +57,37 @@ const faqSchema =
         })),
       }
     : null;
+
+const articleSchema = article
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: article.headline,
+      description: article.description,
+      datePublished: article.publishedTime,
+      dateModified: article.modifiedTime || article.publishedTime,
+      articleSection: article.section || 'Infrastructure Engineering',
+      mainEntityOfPage: {
+        '@type': 'WebPage',
+        '@id': canonical,
+      },
+      ...(article.image ? { image: [article.image] } : {}),
+      author: {
+        '@type': 'Organization',
+        name: site.name,
+        url: site.url + '/',
+      },
+      publisher: {
+        '@type': 'Organization',
+        name: site.name,
+        url: site.url + '/',
+        logo: {
+          '@type': 'ImageObject',
+          url: `${site.url}/apple-touch-icon.png`,
+        },
+      },
+    }
+  : null;
 ---
 <!doctype html>
 <html lang="en">
@@ -62,16 +103,18 @@ const faqSchema =
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <title>{title}</title>
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={article ? 'article' : 'website'} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:site_name" content={`${site.name} — ${site.subtitle}`} />
-    <meta name="twitter:card" content="summary" />
+    {article?.image && <meta property="og:image" content={article.image} />}
+    <meta name="twitter:card" content={article?.image ? 'summary_large_image' : 'summary'} />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <script type="application/ld+json" set:html={JSON.stringify(professionalServiceSchema)} />
     {faqSchema && <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />}
+    {articleSchema && <script type="application/ld+json" set:html={JSON.stringify(articleSchema)} />}
   </head>
   <body>
     <div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>

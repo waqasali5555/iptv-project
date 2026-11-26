@@ -17,14 +17,14 @@ const path = Astro.url.pathname;
       </span>
     </a>
 
-    <nav class="hidden items-center gap-5 xl:flex" aria-label="Primary navigation">
+    <nav class="hidden items-center gap-3.5 xl:flex 2xl:gap-5" aria-label="Primary navigation">
       {
         nav.map(([label, href]) => (
           <a
             href={href}
             class:list={[
-              'text-[.78rem] font-semibold text-muted hover:text-foreground',
-              path === href && 'text-primary',
+              'whitespace-nowrap text-[.76rem] font-semibold text-muted hover:text-foreground',
+              (path === href || (href !== '/' && path.startsWith(href))) && 'text-primary',
             ]}
           >
             {label}

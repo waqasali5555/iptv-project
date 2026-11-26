@@ -1,8 +1,12 @@
+---
+import AdminBlogManager from './AdminBlogManager.astro';
+import AdminPortfolioManager from './AdminPortfolioManager.astro';
+---
 <section class="admin-chat shell section" aria-labelledby="admin-chat-title">
   <div class="admin-chat__heading">
     <p class="eyebrow">Private workspace</p>
-    <h1 id="admin-chat-title" class="section-title">Customer chat inbox</h1>
-    <p class="lede">Review support conversations and reply securely from this device.</p>
+    <h1 id="admin-chat-title" class="section-title">PlexTech Admin Workspace</h1>
+    <p class="lede">Review customer support conversations, publish engineering guides, and manage portfolio case studies.</p>
   </div>
 
   <section class="admin-login surface" aria-labelledby="admin-login-title">
@@ -23,17 +27,28 @@
     </form>
   </section>
 
-  <section class="admin-inbox" hidden aria-label="Customer chat inbox">
+  <section class="admin-inbox" hidden aria-label="Admin workspace">
     <header class="admin-inbox__bar surface">
       <div>
         <p class="eyebrow">Authenticated session</p>
         <p class="admin-inbox__identity">Authorised administrator</p>
       </div>
-      <button class="btn btn-secondary admin-signout" type="button">Sign out</button>
+      <div class="flex flex-wrap items-center gap-2" role="tablist" aria-label="Admin workspace sections">
+        <button type="button" role="tab" aria-selected="true" data-admin-tab="chat" class="admin-tab-btn is-active">
+          Chat Inbox
+        </button>
+        <button type="button" role="tab" aria-selected="false" data-admin-tab="blog" class="admin-tab-btn">
+          Manage Blog
+        </button>
+        <button type="button" role="tab" aria-selected="false" data-admin-tab="portfolio" class="admin-tab-btn">
+          Manage Portfolio
+        </button>
+        <button class="btn btn-secondary admin-signout" type="button">Sign out</button>
+      </div>
     </header>
     <p class="admin-inbox__status" aria-live="polite"></p>
 
-    <div class="admin-inbox__layout">
+    <div id="admin-panel-chat" class="admin-inbox__layout" data-admin-panel="chat">
       <aside class="admin-conversations surface" aria-label="Conversations">
         <div class="admin-panel-title">
           <h2>Conversations</h2>
@@ -59,6 +74,14 @@
           <button class="btn btn-primary" type="submit">Send reply <span aria-hidden="true">↗</span></button>
         </form>
       </section>
+    </div>
+
+    <div id="admin-panel-blog" data-admin-panel="blog" hidden>
+      <AdminBlogManager />
+    </div>
+
+    <div id="admin-panel-portfolio" data-admin-panel="portfolio" hidden>
+      <AdminPortfolioManager />
     </div>
   </section>
 </section>
@@ -295,9 +318,31 @@
       });
   };
 
+  const tabButtons = Array.from(root?.querySelectorAll<HTMLButtonElement>('[data-admin-tab]') ?? []);
+  const tabPanels = Array.from(root?.querySelectorAll<HTMLElement>('[data-admin-panel]') ?? []);
+
+  const switchAdminTab = (tabName: string) => {
+    tabButtons.forEach((btn) => {
+      const active = btn.dataset.adminTab === tabName;
+      btn.setAttribute('aria-selected', String(active));
+      btn.classList.toggle('is-active', active);
+    });
+    tabPanels.forEach((panel) => {
+      panel.hidden = panel.dataset.adminPanel !== tabName;
+    });
+  };
+
+  tabButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.adminTab) switchAdminTab(btn.dataset.adminTab);
+    });
+  });
+
   const showInbox = async () => {
     login && (login.hidden = true);
     inbox && (inbox.hidden = false);
+    switchAdminTab('chat');
+    window.dispatchEvent(new CustomEvent('plextech:admin-auth', { detail: { authenticated: true } }));
     const loaded = await loadConversations();
     if (loaded) startRealtime();
   };
@@ -421,6 +466,8 @@
     inbox && (inbox.hidden = true);
     login && (login.hidden = false);
     loginForm?.reset();
+    switchAdminTab('chat');
+    window.dispatchEvent(new CustomEvent('plextech:admin-auth', { detail: { authenticated: false } }));
     setLoginStatus('You have been signed out.');
     signOut.disabled = false;
   });
@@ -446,9 +493,13 @@
   .admin-forgot-password { width:max-content; border:0; background:transparent; color:var(--primary); padding:0; font:650 .86rem/1.2 inherit; text-decoration:underline; text-underline-offset:.2rem; cursor:pointer; }
   .admin-forgot-password:hover { color:var(--foreground); }
   .admin-forgot-password:disabled { cursor:not-allowed; opacity:.6; }
-  .admin-inbox__bar { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:1rem 1.15rem; }
+  .admin-inbox__bar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:1rem; padding:1rem 1.15rem; }
   .admin-inbox__bar .eyebrow { font-size:.64rem; }
   .admin-inbox__identity { margin:.25rem 0 0; color:var(--foreground); font-weight:700; }
+  .admin-tab-btn { min-height:2.4rem; border:1px solid var(--border); border-radius:999px; background:var(--background); color:var(--muted); padding:.45rem .95rem; font:700 .78rem/1 inherit; cursor:pointer; transition:border-color .2s, background .2s, color .2s; }
+  .admin-tab-btn:hover { border-color:var(--primary); color:var(--foreground); }
+  .admin-tab-btn.is-active { border-color:var(--primary); background:var(--primary); color:var(--ink); }
+  [data-admin-panel][hidden] { display:none !important; }
   .admin-inbox__status { margin:.85rem 0; }
   .admin-inbox__layout { display:grid; grid-template-columns:minmax(16rem, .78fr) minmax(0, 1.7fr); gap:1rem; min-height:34rem; }
   .admin-conversations, .admin-thread { min-width:0; overflow:hidden; }

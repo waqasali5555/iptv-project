@@ -1,0 +1,131 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { site } from '../../data/site';
+---
+<BaseLayout
+  title={`Article | ${site.name} — ${site.subtitle}`}
+  description="Read PlexTech engineering guides on IPTV/OTT streaming, Plex optimization, and NAS infrastructure."
+  noindex={true}
+>
+  <article class="section">
+    <div class="shell max-w-4xl">
+      <a href="/blog/" class="inline-flex items-center gap-2 text-xs font-bold tracking-wider text-primary uppercase hover:text-foreground">
+        ← Back to Engineering Blog
+      </a>
+
+      <div id="dynamic-post-state" class="mt-8 rounded-xl border border-border bg-card p-6 text-sm text-muted">
+        Loading article…
+      </div>
+
+      <div id="dynamic-post-wrapper" hidden>
+        <header class="mt-6 border-b border-border pb-8">
+          <div class="flex flex-wrap items-center gap-3">
+            <span id="dyn-category" class="tag"></span>
+            <time id="dyn-date" class="text-xs font-semibold text-muted-dark"></time>
+          </div>
+          <h1 id="dyn-title" class="mt-4 text-3xl font-extrabold tracking-tight text-foreground md:text-5xl"></h1>
+          <p id="dyn-excerpt" class="lede mt-4"></p>
+          <div id="dyn-cover-wrap" class="mt-8 hidden overflow-hidden rounded-2xl border border-border bg-card">
+            <img id="dyn-cover" src="" alt="" class="max-h-[460px] w-full object-cover" />
+          </div>
+        </header>
+
+        <div id="dyn-content" class="prose mt-10 max-w-none"></div>
+
+        <div class="cta-panel relative mt-14 overflow-hidden rounded-2xl border border-border p-7 md:p-10">
+          <div class="orb -right-16 -top-16 size-56 bg-primary/10"></div>
+          <p class="eyebrow">Remote Engineering • {site.domain}</p>
+          <h2 class="mt-3 text-2xl font-bold tracking-tight md:text-3xl">
+            Need help with this issue? Book a Remote Fix
+          </h2>
+          <p class="mt-2.5 max-w-2xl text-sm text-muted">
+            Get hands-on troubleshooting via SSH, RustDesk, or AnyDesk for your IPTV/OTT pipeline, Plex server, or NAS array.
+          </p>
+          <div class="mt-6 flex flex-wrap gap-3">
+            <button
+              type="button"
+              id="dyn-book-btn"
+              data-open-consultation
+              class="btn btn-primary cursor-pointer"
+            >
+              Need help with this issue? Book a Remote Fix ↗
+            </button>
+            <a class="btn btn-secondary" href={site.whatsapp} target="_blank" rel="noopener noreferrer">
+              WhatsApp {site.phone}
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+</BaseLayout>
+
+<script>
+  import { supabase } from '../../lib/supabase';
+  import { formatDisplayDate, SEED_BLOG_POSTS, type BlogPost } from '../../lib/cms';
+  import { renderMarkdown } from '../../lib/markdown';
+
+  const stateEl = document.getElementById('dynamic-post-state');
+  const wrapperEl = document.getElementById('dynamic-post-wrapper');
+
+  const loadPost = async () => {
+    const slug = new URLSearchParams(window.location.search).get('slug')?.trim();
+    if (!slug) {
+      if (stateEl) stateEl.textContent = 'No article slug specified. Return to the Engineering Blog to browse posts.';
+      return;
+    }
+
+    let post: BlogPost | null = null;
+    const { data, error } = await supabase
+      .from('blog_posts')
+      .select('*')
+      .eq('slug', slug)
+      .eq('published', true)
+      .maybeSingle();
+
+    if (!error && data) {
+      post = data as BlogPost;
+    } else {
+      post = SEED_BLOG_POSTS.find((item) => item.slug === slug) ?? null;
+    }
+
+    if (!post) {
+      if (stateEl) stateEl.textContent = 'This article could not be found or is still in draft status.';
+      return;
+    }
+
+    const titleEl = document.getElementById('dyn-title');
+    const excerptEl = document.getElementById('dyn-excerpt');
+    const categoryEl = document.getElementById('dyn-category');
+    const dateEl = document.getElementById('dyn-date');
+    const contentEl = document.getElementById('dyn-content');
+    const coverWrap = document.getElementById('dyn-cover-wrap');
+    const coverImg = document.getElementById('dyn-cover') as HTMLImageElement | null;
+    const bookBtn = document.getElementById('dyn-book-btn');
+
+    if (titleEl) titleEl.textContent = post.title;
+    if (excerptEl) excerptEl.textContent = post.excerpt;
+    if (categoryEl) categoryEl.textContent = post.category;
+    if (dateEl) dateEl.textContent = `Published ${formatDisplayDate(post.created_at)}`;
+    if (contentEl) contentEl.innerHTML = renderMarkdown(post.content);
+
+    if (post.cover_image_url && coverWrap && coverImg) {
+      coverImg.src = post.cover_image_url;
+      coverImg.alt = post.title;
+      coverWrap.classList.remove('hidden');
+    }
+
+    if (bookBtn instanceof HTMLElement) {
+      bookBtn.dataset.issue = post.title;
+      bookBtn.dataset.category = post.category;
+      bookBtn.dataset.details = `Reading "${post.title}" and need remote assistance with this issue.`;
+    }
+
+    document.title = post.meta_title?.trim() || `${post.title} | PlexTech`;
+
+    if (stateEl) stateEl.hidden = true;
+    if (wrapperEl) wrapperEl.hidden = false;
+  };
+
+  void loadPost();
+</script>
