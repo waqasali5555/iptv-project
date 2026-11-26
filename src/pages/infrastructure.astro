@@ -1,4 +1,70 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro'; import PageHero from '../components/PageHero.astro'; import SectionHeader from '../components/SectionHeader.astro'; import CTA from '../components/CTA.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import SectionHeader from '../components/SectionHeader.astro';
+import CTA from '../components/CTA.astro';
+import { site } from '../data/site';
 ---
-<BaseLayout title="IPTV & OTT Infrastructure | Production Streaming Architecture" description="Production-ready IPTV and OTT server architecture: VPS, dedicated servers, cloud, Docker, CDN, monitoring, backup and security hardening."><PageHero eyebrow="IPTV & OTT Infrastructure" title="Production architecture without the guesswork." text="Deploy a streaming foundation that can be observed, protected, maintained and evolved as your service grows."/><section class="section"><div class="shell"><SectionHeader eyebrow="Architecture" title="Layered for performance and control." text="Each deployment is tailored to the authorized workload, operational needs and delivery footprint."/><div class="surface mt-10 overflow-hidden p-5 md:p-9"><div class="grid gap-3 text-center text-sm font-bold md:grid-cols-5"><div class="rounded-lg border border-cyan/40 bg-cyan/10 p-4 text-cyan">Ingest</div><div class="rounded-lg border border-[#31506f] bg-[#10243a] p-4 text-white">Encode / Relay</div><div class="rounded-lg border border-[#31506f] bg-[#10243a] p-4 text-white">Reverse Proxy</div><div class="rounded-lg border border-[#31506f] bg-[#10243a] p-4 text-white">Load Balance</div><div class="rounded-lg border border-cyan/40 bg-cyan/10 p-4 text-cyan">CDN Delivery</div></div><div class="my-4 border-t border-dashed border-cyan/50"></div><div class="grid gap-3 text-center text-xs font-semibold text-slate-300 md:grid-cols-4"><div class="rounded-md bg-[#07111f] p-3">TLS / SSL</div><div class="rounded-md bg-[#07111f] p-3">Monitoring</div><div class="rounded-md bg-[#07111f] p-3">Backups</div><div class="rounded-md bg-[#07111f] p-3">Security Hardening</div></div></div><div class="prose mt-10 grid gap-7 md:grid-cols-2"><div><h2>Deployment options</h2><p>VPS, dedicated-server and cloud deployments are selected around throughput, storage, resiliency and management needs. Docker can package repeatable services and simplify controlled releases.</p><h2>Availability and delivery</h2><p>Reverse proxies, load balancing, CDN integration and high-availability patterns help create a more dependable delivery path when appropriate.</p></div><div><h2>Operate with confidence</h2><p>Monitoring, backup verification, alerting and recovery planning keep operations visible after launch. We also configure least-privilege access, TLS and practical server hardening.</p><ul><li>Capacity-aware server provisioning</li><li>Secure network and firewall configuration</li><li>Migration planning and documented handover</li></ul></div></div></div></section><CTA action="Get Infrastructure Audit"/></BaseLayout>
+<BaseLayout
+  title={`Infrastructure | ${site.name} — Production Streaming, NAS & Cloud Architecture`}
+  description="Production-ready IPTV/OTT, Plex, Unraid/TrueNAS/Synology NAS, Docker, Kubernetes, Tailscale, CDN, backup, and security hardening architecture."
+>
+  <PageHero
+    eyebrow="Infrastructure"
+    title="Production architecture without the guesswork."
+    text="Deploy streaming, Plex media, and NAS storage foundations that can be observed, protected, backed up, and scaled cleanly."
+  />
+  <section class="section">
+    <div class="shell">
+      <SectionHeader
+        eyebrow="Architecture"
+        title="Layered for performance and control."
+        text="Each deployment is tailored to your authorized streaming workload, storage redundancy, and remote access footprint."
+      />
+      <div class="surface mt-10 overflow-hidden p-5 md:p-9">
+        <div class="grid gap-3 text-center text-sm font-bold md:grid-cols-5">
+          <div class="rounded-lg border border-cyan/40 bg-cyan/10 p-4 text-cyan">Ingest (SRT/RTMP)</div>
+          <div class="rounded-lg border border-[#31506f] bg-[#10243a] p-4 text-white">FFmpeg / GPU Transcode</div>
+          <div class="rounded-lg border border-[#31506f] bg-[#10243a] p-4 text-white">Nginx / WireGuard Proxy</div>
+          <div class="rounded-lg border border-[#31506f] bg-[#10243a] p-4 text-white">ZFS / XFS NAS Storage</div>
+          <div class="rounded-lg border border-cyan/40 bg-cyan/10 p-4 text-cyan">CDN / Edge Delivery</div>
+        </div>
+        <div class="my-4 border-t border-dashed border-cyan/50"></div>
+        <div class="grid gap-3 text-center text-xs font-semibold text-slate-300 md:grid-cols-4">
+          <div class="rounded-md bg-[#07111f] p-3">TLS / SSL &amp; Tailscale</div>
+          <div class="rounded-md bg-[#07111f] p-3">Grafana &amp; Prometheus</div>
+          <div class="rounded-md bg-[#07111f] p-3">3-2-1 Backups</div>
+          <div class="rounded-md bg-[#07111f] p-3">Linux &amp; Docker Hardening</div>
+        </div>
+      </div>
+
+      <div class="prose mt-10 grid gap-7 md:grid-cols-2">
+        <div>
+          <h2>Deployment options</h2>
+          <p>
+            VPS, dedicated bare-metal, cloud, Unraid, and TrueNAS Scale deployments are engineered around throughput,
+            GPU transcoding density, ZFS/XFS reliability, and clean Docker UID/GID isolation.
+          </p>
+          <h2>Availability and delivery</h2>
+          <p>
+            Reverse proxies, WireGuard/Tailscale mesh tunnels, load balancing, and CDN edge caching keep both
+            licensed OTT platforms and CGNAT-restricted Plex servers fast and resilient.
+          </p>
+        </div>
+        <div>
+          <h2>Operate with confidence</h2>
+          <p>
+            Prometheus monitoring, Telegram alerting, 3-2-1 backup verification, and disaster recovery planning keep
+            operations visible after launch.
+          </p>
+          <ul>
+            <li>Capacity-aware server and ZFS/XFS storage provisioning</li>
+            <li>CGNAT bypass via WireGuard/Tailscale and VPS reverse proxy</li>
+            <li>Zero-data-loss migration planning and documented handover</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+  <CTA action="Get Infrastructure Audit" />
+</BaseLayout>

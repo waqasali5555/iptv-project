@@ -1,6 +1,34 @@
 ---
 import { site } from '../data/site';
-interface Props { title?: string; text?: string; action?: string }
-const { title='Ready to strengthen your streaming infrastructure?', text='Start with a practical conversation about your architecture, operations or technical issue.', action='Get a Free Consultation' } = Astro.props;
+interface Props {
+  title?: string;
+  text?: string;
+  action?: string;
+}
+const {
+  title = 'Ready to harden your streaming, Plex, or NAS infrastructure?',
+  text = 'Start with a direct technical conversation about your IPTV/OTT pipeline, CGNAT remote access, storage migration, or monitoring stack.',
+  action = 'Get a Free Consultation',
+} = Astro.props;
 ---
-<section class="section"><div class="shell"><div class="cta-panel relative overflow-hidden rounded-2xl border border-border p-7 md:p-12"><div class="orb -right-16 -top-16 size-64 bg-primary/10"></div><p class="eyebrow">Infrastructure support</p><h2 class="mt-3 max-w-2xl text-3xl font-bold tracking-tight md:text-4xl">{title}</h2><p class="mt-3 max-w-xl">{text}</p><div class="mt-6 flex flex-wrap gap-3"><a class="btn btn-primary" href={site.whatsapp} target="_blank" rel="noopener noreferrer">{action} <span aria-hidden="true">↗</span></a><a class="btn btn-secondary" href={`mailto:${site.email}`}>Email us</a></div></div></div></section>
+<section class="section">
+  <div class="shell">
+    <div class="cta-panel relative overflow-hidden rounded-2xl border border-border p-7 md:p-12">
+      <div class="orb -right-16 -top-16 size-64 bg-primary/10"></div>
+      <p class="eyebrow">Remote Engineering • {site.domain}</p>
+      <h2 class="mt-3 max-w-2xl text-3xl font-bold tracking-tight md:text-4xl">{title}</h2>
+      <p class="mt-3 max-w-xl">{text}</p>
+      <div class="mt-6 flex flex-wrap gap-3">
+        <a class="btn btn-primary" href={site.whatsapp} target="_blank" rel="noopener noreferrer">
+          {action} ({site.phone}) <span aria-hidden="true">↗</span>
+        </a>
+        <button type="button" data-open-consultation class="btn btn-secondary cursor-pointer">
+          Open Remote Request Form
+        </button>
+        <a class="btn btn-secondary" href={`mailto:${site.email}`}>
+          Email us
+        </a>
+      </div>
+    </div>
+  </div>
+</section>

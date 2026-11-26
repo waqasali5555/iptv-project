@@ -1,0 +1,127 @@
+---
+import SectionHeader from './SectionHeader.astro';
+import { commonIssues, type IssueCategory } from '../data/site';
+
+const tabs: ('All Issues' | IssueCategory)[] = [
+  'All Issues',
+  'IPTV & OTT',
+  'Plex & Unraid',
+  'NAS & DevOps',
+];
+---
+<section id="common-issues" class="section border-y border-border bg-secondary-bg/70">
+  <div class="shell">
+    <div class="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+      <SectionHeader
+        eyebrow="Diagnostics & Remote Fixes"
+        title="Common Issues We Fix"
+        text="Filter by infrastructure layer and request a targeted remote fix over SSH, RustDesk, or AnyDesk."
+      />
+
+      <div
+        class="flex flex-wrap gap-2"
+        role="tablist"
+        aria-label="Filter common infrastructure issues"
+      >
+        {
+          tabs.map((tab, index) => (
+            <button
+              type="button"
+              role="tab"
+              aria-selected={index === 0 ? 'true' : 'false'}
+              data-issue-tab={tab}
+              class:list={[
+                'issue-tab cursor-pointer rounded-full border px-4 py-2 text-xs font-bold tracking-wide transition',
+                index === 0
+                  ? 'border-primary bg-primary text-ink shadow-md shadow-primary/20'
+                  : 'border-border bg-card text-muted hover:border-primary/60 hover:text-foreground',
+              ]}
+            >
+              {tab}
+            </button>
+          ))
+        }
+      </div>
+    </div>
+
+    <div class="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3" id="common-issues-grid">
+      {
+        commonIssues.map((issue) => (
+          <article
+            class="issue-card card flex flex-col justify-between gap-5"
+            data-issue-category={issue.category}
+          >
+            <div>
+              <div class="flex items-center justify-between gap-2">
+                <span class="tag">{issue.category}</span>
+                <span class="text-xs font-semibold text-muted-dark">Remote Fix</span>
+              </div>
+              <h3 class="mt-4 text-lg font-bold text-foreground">{issue.title}</h3>
+              <p class="mt-2 text-sm text-muted">{issue.summary}</p>
+              <div class="mt-4 flex flex-wrap gap-1.5">
+                {issue.tags.map((tag) => (
+                  <span class="rounded-md border border-border bg-background/80 px-2 py-1 text-[0.7rem] font-semibold text-slate-300">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              class="inline-flex w-full cursor-pointer items-center justify-between rounded-xl border border-primary/40 bg-primary/10 px-4 py-2.5 text-xs font-bold text-primary transition hover:border-primary hover:bg-primary hover:text-ink"
+              data-open-consultation
+              data-issue={issue.title}
+              data-category={issue.category}
+              data-details={issue.defaultDetails}
+            >
+              <span>Fix this issue remotely</span>
+              <span aria-hidden="true">↗</span>
+            </button>
+          </article>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<script>
+  const tabButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-issue-tab]'));
+  const issueCards = Array.from(document.querySelectorAll<HTMLElement>('.issue-card'));
+
+  const activeClasses = [
+    'border-primary',
+    'bg-primary',
+    'text-ink',
+    'shadow-md',
+    'shadow-primary/20',
+  ];
+  const inactiveClasses = [
+    'border-border',
+    'bg-card',
+    'text-muted',
+    'hover:border-primary/60',
+    'hover:text-foreground',
+  ];
+
+  tabButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      const selected = button.dataset.issueTab ?? 'All Issues';
+
+      tabButtons.forEach((btn) => {
+        const isCurrent = btn === button;
+        btn.setAttribute('aria-selected', String(isCurrent));
+        btn.classList.remove(...(isCurrent ? inactiveClasses : activeClasses));
+        btn.classList.add(...(isCurrent ? activeClasses : inactiveClasses));
+      });
+
+      issueCards.forEach((card) => {
+        const matches = selected === 'All Issues' || card.dataset.issueCategory === selected;
+        card.hidden = !matches;
+        if (matches) {
+          card.classList.add('revealed');
+        }
+      });
+    });
+  });
+</script>

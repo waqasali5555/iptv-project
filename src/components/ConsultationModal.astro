@@ -1,0 +1,204 @@
+---
+import { site } from '../data/site';
+---
+<div
+  id="consultation-modal"
+  class="consultation-modal fixed inset-0 z-70 hidden items-center justify-center p-4"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="consultation-modal-title"
+  hidden
+>
+  <div class="consultation-backdrop fixed inset-0 bg-[#020617]/80 backdrop-blur-sm" data-close-consultation></div>
+
+  <div class="consultation-dialog relative z-10 w-full max-w-xl overflow-hidden rounded-2xl border border-border bg-card shadow-2xl shadow-black/70">
+    <div class="flex items-start justify-between gap-4 border-b border-border bg-card-elevated px-6 py-5">
+      <div>
+        <p class="eyebrow">Remote Consultation • {site.domain}</p>
+        <h2 id="consultation-modal-title" class="mt-2 text-xl font-bold text-foreground">
+          Request Remote Infrastructure Fix
+        </h2>
+      </div>
+      <button
+        type="button"
+        class="grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg border border-border text-lg text-muted transition hover:border-primary hover:text-foreground"
+        aria-label="Close consultation modal"
+        data-close-consultation
+      >
+        ×
+      </button>
+    </div>
+
+    <form id="consultation-form" class="grid gap-4 p-6">
+      <div class="grid gap-4 sm:grid-cols-2">
+        <label class="grid gap-1.5 text-xs font-semibold tracking-wide text-foreground uppercase">
+          Your Name
+          <input
+            id="consultation-name"
+            name="name"
+            type="text"
+            required
+            placeholder="Alex / Ops Lead"
+            class="rounded-lg border border-border bg-background px-3.5 py-2.5 text-sm font-normal text-foreground"
+          />
+        </label>
+
+        <label class="grid gap-1.5 text-xs font-semibold tracking-wide text-foreground uppercase">
+          Category
+          <select
+            id="consultation-category"
+            name="category"
+            class="rounded-lg border border-border bg-background px-3.5 py-2.5 text-sm font-normal text-foreground"
+          >
+            <option value="IPTV & OTT">IPTV &amp; OTT</option>
+            <option value="Plex & Unraid">Plex &amp; Unraid</option>
+            <option value="NAS & DevOps">NAS &amp; DevOps</option>
+            <option value="General Infrastructure">General Infrastructure</option>
+          </select>
+        </label>
+      </div>
+
+      <label class="grid gap-1.5 text-xs font-semibold tracking-wide text-foreground uppercase">
+        Issue / Service Topic
+        <input
+          id="consultation-issue"
+          name="issue"
+          type="text"
+          required
+          placeholder="e.g. IPTV Buffering & Stream Freezing"
+          class="rounded-lg border border-border bg-background px-3.5 py-2.5 text-sm font-normal text-foreground"
+        />
+      </label>
+
+      <label class="grid gap-1.5 text-xs font-semibold tracking-wide text-foreground uppercase">
+        Environment &amp; Symptoms
+        <textarea
+          id="consultation-details"
+          name="details"
+          rows="4"
+          required
+          placeholder="Share your server OS, NAS/Plex setup, streaming stack, or error symptoms..."
+          class="rounded-lg border border-border bg-background px-3.5 py-2.5 text-sm font-normal text-foreground"
+        ></textarea>
+      </label>
+
+      <p class="text-xs text-muted">
+        Remote sessions run securely over SSH, RustDesk, or AnyDesk. Direct WhatsApp:{' '}
+        <a href={site.whatsapp} target="_blank" rel="noopener noreferrer" class="font-semibold text-primary hover:underline">
+          {site.phone}
+        </a>
+      </p>
+
+      <div class="flex flex-wrap items-center gap-3 pt-1">
+        <button type="submit" class="btn btn-primary cursor-pointer">
+          Send via WhatsApp ({site.phone}) ↗
+        </button>
+        <button type="button" id="consultation-email-btn" class="btn btn-secondary cursor-pointer">
+          Send via Email
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script define:vars={{ whatsappBase: site.whatsapp, supportEmail: site.email }}>
+  const modal = document.getElementById('consultation-modal');
+  const form = document.getElementById('consultation-form');
+  const nameInput = document.getElementById('consultation-name');
+  const categorySelect = document.getElementById('consultation-category');
+  const issueInput = document.getElementById('consultation-issue');
+  const detailsInput = document.getElementById('consultation-details');
+  const emailBtn = document.getElementById('consultation-email-btn');
+
+  let lastFocused = null;
+
+  const openModal = ({ issue = '', category = '', details = '' } = {}) => {
+    if (!modal) return;
+    lastFocused = document.activeElement;
+    if (issueInput instanceof HTMLInputElement) {
+      issueInput.value = issue || 'Infrastructure & Remote Support Consultation';
+    }
+    if (categorySelect instanceof HTMLSelectElement && category) {
+      const match = Array.from(categorySelect.options).find((opt) => opt.value === category);
+      if (match) categorySelect.value = category;
+    }
+    if (detailsInput instanceof HTMLTextAreaElement) {
+      detailsInput.value = details || '';
+    }
+    modal.hidden = false;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+    window.setTimeout(() => {
+      if (nameInput instanceof HTMLInputElement) nameInput.focus();
+    }, 10);
+  };
+
+  const closeModal = () => {
+    if (!modal || modal.hidden) return;
+    modal.hidden = true;
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.body.style.overflow = '';
+    if (lastFocused instanceof HTMLElement) lastFocused.focus();
+  };
+
+  document.addEventListener('click', (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target) return;
+
+    const trigger = target.closest('[data-open-consultation]');
+    if (trigger instanceof HTMLElement) {
+      event.preventDefault();
+      openModal({
+        issue: trigger.dataset.issue || '',
+        category: trigger.dataset.category || '',
+        details: trigger.dataset.details || '',
+      });
+      return;
+    }
+
+    if (target.closest('[data-close-consultation]')) {
+      event.preventDefault();
+      closeModal();
+    }
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && modal && !modal.hidden) {
+      closeModal();
+    }
+  });
+
+  const buildSummaryText = () => {
+    const name = nameInput instanceof HTMLInputElement ? nameInput.value.trim() : '';
+    const category = categorySelect instanceof HTMLSelectElement ? categorySelect.value : '';
+    const issue = issueInput instanceof HTMLInputElement ? issueInput.value.trim() : '';
+    const details = detailsInput instanceof HTMLTextAreaElement ? detailsInput.value.trim() : '';
+    return [
+      'Hello PlexTech Team,',
+      name ? `Name: ${name}` : '',
+      category ? `Area: ${category}` : '',
+      issue ? `Issue: ${issue}` : '',
+      details ? `Details: ${details}` : '',
+    ]
+      .filter(Boolean)
+      .join('\n');
+  };
+
+  form?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const message = buildSummaryText();
+    const url = `${whatsappBase}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+    closeModal();
+  });
+
+  emailBtn?.addEventListener('click', () => {
+    if (form instanceof HTMLFormElement && !form.reportValidity()) return;
+    const issue = issueInput instanceof HTMLInputElement ? issueInput.value.trim() : 'Remote Support Request';
+    const body = buildSummaryText();
+    window.location.href = `mailto:${supportEmail}?subject=${encodeURIComponent(`[PlexTech] ${issue}`)}&body=${encodeURIComponent(body)}`;
+    closeModal();
+  });
+</script>

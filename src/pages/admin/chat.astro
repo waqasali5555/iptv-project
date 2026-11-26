@@ -1,9 +1,10 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import AdminChatInbox from '../../components/AdminChatInbox.astro';
+import { site } from '../../data/site';
 ---
 <BaseLayout
-  title="Admin Chat Inbox | OTT/INFRA"
+  title={`Admin Chat Inbox | ${site.name}`}
   description="Private administrator workspace for customer support conversations."
   noindex={true}
   showPublicChat={false}
