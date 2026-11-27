@@ -6,7 +6,9 @@ export default defineConfig({
   site: 'https://www.plextech.online',
   integrations: [
     sitemap({
-      filter: (page) => !page.startsWith('https://www.plextech.online/admin/'),
+      filter: (page) =>
+        !page.startsWith('https://www.plextech.online/admin/') &&
+        !page.startsWith('https://www.plextech.online/blog/post/'),
     }),
   ],
   vite: { plugins: [tailwindcss()] },

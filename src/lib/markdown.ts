@@ -113,8 +113,8 @@ export const renderMarkdown = (markdown: string): string => {
       continue;
     }
 
-    // Headings (# through ####)
-    const headingMatch = /^(#{1,4})\s+(.+?)\s*#*$/.exec(trimmed);
+    // Headings (# through ######)
+    const headingMatch = /^(#{1,6})\s+(.+?)\s*#*$/.exec(trimmed);
     if (headingMatch) {
       const level = headingMatch[1]?.length ?? 2;
       const content = renderInline(headingMatch[2] ?? '');
@@ -172,7 +172,7 @@ export const renderMarkdown = (markdown: string): string => {
         !currentTrim ||
         isIndentedCodeLine(current) ||
         currentTrim.startsWith('```') ||
-        /^(#{1,4})\s+/.test(currentTrim) ||
+        /^(#{1,6})\s+/.test(currentTrim) ||
         /^(-{3,}|\*{3,}|_{3,})$/.test(currentTrim) ||
         currentTrim.startsWith('>') ||
         /^[-*]\s+/.test(currentTrim) ||

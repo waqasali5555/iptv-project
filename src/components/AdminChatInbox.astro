@@ -1,6 +1,8 @@
 ---
 import AdminBlogManager from './AdminBlogManager.astro';
 import AdminPortfolioManager from './AdminPortfolioManager.astro';
+import AdminSeoManager from './AdminSeoManager.astro';
+import AdminSecurityManager from './AdminSecurityManager.astro';
 ---
 <section class="admin-chat shell section" aria-labelledby="admin-chat-title">
   <div class="admin-chat__heading">
@@ -43,6 +45,12 @@ import AdminPortfolioManager from './AdminPortfolioManager.astro';
         <button type="button" role="tab" aria-selected="false" data-admin-tab="portfolio" class="admin-tab-btn">
           Manage Portfolio
         </button>
+        <button type="button" role="tab" aria-selected="false" data-admin-tab="seo" class="admin-tab-btn">
+          SEO &amp; Google Console
+        </button>
+        <button type="button" role="tab" aria-selected="false" data-admin-tab="security" class="admin-tab-btn">
+          Security &amp; Firewall
+        </button>
         <button class="btn btn-secondary admin-signout" type="button">Sign out</button>
       </div>
     </header>
@@ -82,6 +90,14 @@ import AdminPortfolioManager from './AdminPortfolioManager.astro';
 
     <div id="admin-panel-portfolio" data-admin-panel="portfolio" hidden>
       <AdminPortfolioManager />
+    </div>
+
+    <div id="admin-panel-seo" data-admin-panel="seo" hidden>
+      <AdminSeoManager />
+    </div>
+
+    <div id="admin-panel-security" data-admin-panel="security" hidden>
+      <AdminSecurityManager />
     </div>
   </section>
 </section>
@@ -347,6 +363,48 @@ import AdminPortfolioManager from './AdminPortfolioManager.astro';
     if (loaded) startRealtime();
   };
 
+  const LOCKOUT_KEY = 'plextech_admin_lockout';
+  const MAX_FAILED_ATTEMPTS = 5;
+  const LOCKOUT_MS = 15 * 60 * 1000;
+
+  const getLockoutState = () => {
+    try {
+      const raw = localStorage.getItem(LOCKOUT_KEY);
+      if (!raw) return { attempts: 0, lockedUntil: 0 };
+      const parsed = JSON.parse(raw) as { attempts?: number; lockedUntil?: number };
+      return { attempts: parsed.attempts ?? 0, lockedUntil: parsed.lockedUntil ?? 0 };
+    } catch {
+      return { attempts: 0, lockedUntil: 0 };
+    }
+  };
+
+  const setLockoutState = (attempts: number, lockedUntil = 0) => {
+    try {
+      localStorage.setItem(LOCKOUT_KEY, JSON.stringify({ attempts, lockedUntil }));
+    } catch {
+      // Ignore storage errors in private browsing.
+    }
+  };
+
+  const logSecurityEvent = async (
+    eventType: 'failed_login' | 'brute_force_lockout' | 'unauthorized_account' | 'ip_blocked',
+    emailAttempted: string,
+    details: string,
+  ) => {
+    try {
+      await supabase.rpc('log_security_event', {
+        p_event_type: eventType,
+        p_ip_address: 'client-browser',
+        p_email_attempted: emailAttempted,
+        p_user_agent: navigator.userAgent,
+        p_path: window.location.pathname,
+        p_details: details,
+      });
+    } catch {
+      // Security RPC is optional until 20261127_security_and_seo.sql is applied.
+    }
+  };
+
   const validateSession = async () => {
     const { data, error } = await supabase.auth.getSession();
     if (error) {
@@ -357,6 +415,7 @@ import AdminPortfolioManager from './AdminPortfolioManager.astro';
     const user = data.session?.user;
     if (!user) return;
     if (user.id !== ADMIN_USER_ID) {
+      await logSecurityEvent('unauthorized_account', user.email ?? '', 'Non-admin session attempted workspace access.');
       await supabase.auth.signOut();
       setLoginStatus('This account is not authorised to access the chat inbox.', true);
       return;
@@ -366,6 +425,13 @@ import AdminPortfolioManager from './AdminPortfolioManager.astro';
 
   loginForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
+    const lockout = getLockoutState();
+    if (lockout.lockedUntil > Date.now()) {
+      const mins = Math.ceil((lockout.lockedUntil - Date.now()) / 60000);
+      setLoginStatus(`Too many failed attempts. Admin login locked for ${mins} minute(s).`, true);
+      return;
+    }
+
     const formData = new FormData(loginForm);
     const email = String(formData.get('email') ?? '').trim();
     const password = String(formData.get('password') ?? '');
@@ -376,16 +442,31 @@ import AdminPortfolioManager from './AdminPortfolioManager.astro';
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error || !data.user) {
       const detail = reportError('password_sign_in', error);
-      setLoginStatus(`Sign in failed (${detail.code}, HTTP ${detail.status}).`, true);
+      const nextAttempts = lockout.attempts + 1;
+      if (nextAttempts >= MAX_FAILED_ATTEMPTS) {
+        const until = Date.now() + LOCKOUT_MS;
+        setLockoutState(nextAttempts, until);
+        void logSecurityEvent('brute_force_lockout', email, `Locked after ${nextAttempts} failed login attempts.`);
+        setLoginStatus('Too many failed login attempts. Access locked for 15 minutes.', true);
+      } else {
+        setLockoutState(nextAttempts, 0);
+        void logSecurityEvent('failed_login', email, `Failed attempt ${nextAttempts}/${MAX_FAILED_ATTEMPTS} (${detail.code}).`);
+        setLoginStatus(
+          `Sign in failed (${detail.code}, HTTP ${detail.status}). ${MAX_FAILED_ATTEMPTS - nextAttempts} attempt(s) remaining.`,
+          true,
+        );
+      }
       button.disabled = false;
       return;
     }
     if (data.user.id !== ADMIN_USER_ID) {
+      void logSecurityEvent('unauthorized_account', email, `Unauthorized UID ${data.user.id} attempted admin login.`);
       await supabase.auth.signOut();
       setLoginStatus('This account is not authorised to access the chat inbox.', true);
       button.disabled = false;
       return;
     }
+    setLockoutState(0, 0);
     await showInbox();
     button.disabled = false;
   });

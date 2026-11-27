@@ -232,3 +232,64 @@ export async function fetchPublishedPortfolioItems(): Promise<{
 
   return { items: SEED_PORTFOLIO_ITEMS, fromSupabase: false };
 }
+
+export const STATIC_SITEMAP_ROUTES = [
+  '/',
+  '/services/',
+  '/infrastructure/',
+  '/streaming-solutions/',
+  '/troubleshooting/',
+  '/security-monitoring/',
+  '/server-maintenance/',
+  '/portfolio/',
+  '/blog/',
+  '/technologies/',
+  '/about/',
+  '/contact/',
+] as const;
+
+const escapeXml = (value: string): string =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+
+export function buildSitemapXml(
+  posts: Pick<BlogPost, 'slug' | 'updated_at' | 'published_at' | 'created_at'>[],
+  siteUrl = 'https://www.plextech.online',
+): string {
+  const today = new Date().toISOString().split('T')[0] ?? '2026-11-27';
+
+  const staticEntries = STATIC_SITEMAP_ROUTES.map((route) => ({
+    loc: `${siteUrl}${route}`,
+    lastmod: today,
+    changefreq: route === '/' || route === '/blog/' || route === '/portfolio/' ? 'weekly' : 'monthly',
+    priority: route === '/' ? '1.0' : route === '/blog/' || route === '/portfolio/' ? '0.9' : '0.8',
+  }));
+
+  const blogEntries = posts.map((post) => ({
+    loc: `${siteUrl}/blog/${encodeURIComponent(post.slug)}/`,
+    lastmod: (post.updated_at || post.published_at || post.created_at || today).split('T')[0] ?? today,
+    changefreq: 'weekly',
+    priority: '0.85',
+  }));
+
+  const urls = [...staticEntries, ...blogEntries]
+    .map(
+      (entry) => `  <url>
+    <loc>${escapeXml(entry.loc)}</loc>
+    <lastmod>${escapeXml(entry.lastmod)}</lastmod>
+    <changefreq>${entry.changefreq}</changefreq>
+    <priority>${entry.priority}</priority>
+  </url>`,
+    )
+    .join('\n');
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls}
+</urlset>
+`;
+}

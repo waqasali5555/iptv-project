@@ -1,6 +1,8 @@
 User-agent: *
 Allow: /
 Disallow: /admin/
+Disallow: /blog/post/
 
+Host: https://www.plextech.online
 Sitemap: https://www.plextech.online/sitemap.xml
 Sitemap: https://www.plextech.online/sitemap-index.xml

@@ -462,7 +462,17 @@
 
     await loadPosts();
     resetForm();
-    setStatus(existingId ? 'Blog post updated.' : 'Blog post created.');
+    let hookNote = '';
+    const deployHook = localStorage.getItem('plextech_deploy_hook_url')?.trim();
+    if (payload.published && deployHook) {
+      try {
+        await fetch(deployHook, { method: 'POST', mode: 'no-cors' });
+        hookNote = ' Auto-rebuild triggered for /sitemap.xml.';
+      } catch {
+        // Non-blocking deploy hook ping.
+      }
+    }
+    setStatus(`${existingId ? 'Blog post updated.' : 'Blog post created.'}${hookNote}`);
     saveBtn.disabled = false;
   });
 

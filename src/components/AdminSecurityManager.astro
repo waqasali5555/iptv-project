@@ -1,0 +1,389 @@
+<section class="admin-cms-panel w-full min-w-0" aria-labelledby="admin-security-heading">
+  <div class="grid min-w-0 gap-6">
+    <div class="grid gap-3 sm:grid-cols-3">
+      <div class="rounded-xl border border-slate-800 bg-slate-900/80 p-4">
+        <p class="text-[0.7rem] font-semibold tracking-wider text-slate-400 uppercase">Active Blocked IPs</p>
+        <p id="sec-blocked-count" class="mt-1 text-2xl font-extrabold text-red-300">0</p>
+      </div>
+      <div class="rounded-xl border border-slate-800 bg-slate-900/80 p-4">
+        <p class="text-[0.7rem] font-semibold tracking-wider text-slate-400 uppercase">Security Events</p>
+        <p id="sec-events-count" class="mt-1 text-2xl font-extrabold text-amber-300">0</p>
+      </div>
+      <div class="rounded-xl border border-slate-800 bg-slate-900/80 p-4">
+        <p class="text-[0.7rem] font-semibold tracking-wider text-slate-400 uppercase">Admin Brute-Force Guard</p>
+        <p class="mt-1 text-sm font-bold text-emerald-300">Active (5-attempt 15m lockout + RLS)</p>
+      </div>
+    </div>
+
+    <div class="grid min-w-0 gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+      <form id="admin-block-ip-form" class="surface grid w-full min-w-0 gap-4 p-5 md:p-6">
+        <div class="border-b border-border pb-4">
+          <p class="eyebrow">Security &amp; Firewall</p>
+          <h2 id="admin-security-heading" class="mt-1.5 text-xl font-bold text-foreground">
+            Block Suspicious IP / Intruder
+          </h2>
+          <p class="mt-1 text-xs text-muted">
+            Deny blocked IPs at admin sign-in and generate instant Cloudflare WAF, Nginx, and UFW firewall rules.
+          </p>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <label class="grid gap-1.5 text-xs font-semibold tracking-wide text-foreground uppercase">
+            IP Address or CIDR
+            <input
+              id="sec-ip-input"
+              name="ip_address"
+              type="text"
+              required
+              placeholder="203.0.113.45"
+              class="rounded-lg border border-border bg-background px-3 py-2.5 text-sm font-normal text-foreground"
+            />
+          </label>
+
+          <label class="grid gap-1.5 text-xs font-semibold tracking-wide text-foreground uppercase">
+            Threat Level
+            <select
+              id="sec-threat-select"
+              name="threat_level"
+              class="rounded-lg border border-border bg-background px-3 py-2.5 text-sm font-normal text-foreground"
+            >
+              <option value="high">High (Immediate Block)</option>
+              <option value="medium">Medium (Scanner / Brute Force)</option>
+              <option value="low">Low (Watchlist)</option>
+            </select>
+          </label>
+        </div>
+
+        <label class="grid gap-1.5 text-xs font-semibold tracking-wide text-foreground uppercase">
+          Reason
+          <input
+            id="sec-reason-input"
+            name="reason"
+            type="text"
+            required
+            placeholder="Repeated failed admin login / vulnerability probe"
+            class="rounded-lg border border-border bg-background px-3 py-2.5 text-sm font-normal text-foreground"
+          />
+        </label>
+
+        <p id="sec-form-status" class="min-h-5 text-xs text-muted" aria-live="polite"></p>
+
+        <div class="flex flex-wrap gap-3">
+          <button type="submit" id="sec-block-btn" class="btn btn-primary cursor-pointer">
+            Block Suspicious IP
+          </button>
+          <button type="button" id="sec-refresh-btn" class="btn btn-secondary cursor-pointer">
+            Refresh Logs
+          </button>
+        </div>
+
+        <div class="mt-2 grid gap-2 border-t border-border pt-4">
+          <div class="flex items-center justify-between gap-2">
+            <h3 class="text-xs font-bold tracking-wider text-slate-200 uppercase">
+              Export Edge / Server Firewall Rules
+            </h3>
+            <button type="button" id="sec-copy-rules-btn" class="cursor-pointer rounded-md border border-cyan-500/40 bg-cyan-500/15 px-2.5 py-1 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/25">
+              Copy Rules
+            </button>
+          </div>
+          <pre
+            id="sec-firewall-export"
+            class="max-h-48 overflow-auto rounded-xl border border-slate-800 bg-slate-950 p-3 font-mono text-[0.72rem] text-slate-300"
+          ># Active blocked IPs will export here for Cloudflare WAF, Nginx, and UFW.</pre>
+        </div>
+      </form>
+
+      <div class="grid min-w-0 gap-6">
+        <aside class="surface flex w-full min-w-0 flex-col overflow-hidden">
+          <div class="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
+            <div class="min-w-0">
+              <h3 class="text-base font-bold text-foreground">Blocked IPs</h3>
+              <p class="text-xs text-muted">Denied from admin access</p>
+            </div>
+          </div>
+          <div id="sec-blocked-list" class="flex max-h-72 w-full min-w-0 flex-col gap-3 overflow-y-auto p-4">
+            <p class="text-sm text-slate-300">Sign in to view blocked IPs.</p>
+          </div>
+        </aside>
+
+        <aside class="surface flex w-full min-w-0 flex-col overflow-hidden">
+          <div class="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
+            <div class="min-w-0">
+              <h3 class="text-base font-bold text-foreground">Intrusion &amp; Failed Login Log</h3>
+              <p class="text-xs text-muted">Suspicious attempts logged by Supabase</p>
+            </div>
+            <button type="button" id="sec-clear-events-btn" class="cursor-pointer rounded-md border border-red-500/40 bg-red-500/15 px-2.5 py-1 text-xs font-semibold text-red-300 hover:bg-red-500/25">
+              Clear Log
+            </button>
+          </div>
+          <div id="sec-events-list" class="flex max-h-80 w-full min-w-0 flex-col gap-3 overflow-y-auto p-4">
+            <p class="text-sm text-slate-300">Sign in to inspect security events.</p>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { supabase } from '../lib/supabase';
+  import { formatDisplayDateTime } from '../lib/cms';
+
+  interface BlockedIp {
+    id: string;
+    ip_address: string;
+    reason: string;
+    threat_level: 'low' | 'medium' | 'high';
+    active: boolean;
+    hit_count: number;
+    created_at: string;
+  }
+
+  interface SecurityEvent {
+    id: string;
+    event_type: string;
+    ip_address: string;
+    email_attempted: string;
+    user_agent: string;
+    path: string;
+    details: string;
+    created_at: string;
+  }
+
+  const form = document.getElementById('admin-block-ip-form') as HTMLFormElement | null;
+  const ipInput = document.getElementById('sec-ip-input') as HTMLInputElement | null;
+  const threatSelect = document.getElementById('sec-threat-select') as HTMLSelectElement | null;
+  const reasonInput = document.getElementById('sec-reason-input') as HTMLInputElement | null;
+  const statusEl = document.getElementById('sec-form-status');
+  const blockedCountEl = document.getElementById('sec-blocked-count');
+  const eventsCountEl = document.getElementById('sec-events-count');
+  const blockedListEl = document.getElementById('sec-blocked-list');
+  const eventsListEl = document.getElementById('sec-events-list');
+  const exportEl = document.getElementById('sec-firewall-export');
+  const refreshBtn = document.getElementById('sec-refresh-btn');
+  const copyRulesBtn = document.getElementById('sec-copy-rules-btn');
+  const clearEventsBtn = document.getElementById('sec-clear-events-btn');
+
+  let blockedIps: BlockedIp[] = [];
+  let securityEvents: SecurityEvent[] = [];
+
+  const escapeHtml = (value: string) =>
+    value.replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch] || ch);
+
+  const setStatus = (msg: string, isError = false) => {
+    if (!statusEl) return;
+    statusEl.textContent = msg;
+    statusEl.className = `min-h-5 text-xs ${isError ? 'text-red-300' : 'text-slate-300'}`;
+  };
+
+  const renderFirewallExport = () => {
+    if (!exportEl) return;
+    const active = blockedIps.filter((row) => row.active);
+    if (!active.length) {
+      exportEl.textContent = '# No active blocked IPs yet.';
+      return;
+    }
+    const cfExpr = `(ip.src in {${active.map((r) => r.ip_address).join(' ')}})`;
+    const nginxRules = active.map((r) => `deny ${r.ip_address}; # ${r.reason}`).join('\n');
+    const ufwRules = active.map((r) => `sudo ufw deny from ${r.ip_address} to any`).join('\n');
+    exportEl.textContent = `# Cloudflare WAF Expression:\n${cfExpr}\n\n# Nginx:\n${nginxRules}\n\n# Linux UFW:\n${ufwRules}`;
+  };
+
+  const renderBlockedIps = () => {
+    if (blockedCountEl) {
+      blockedCountEl.textContent = String(blockedIps.filter((row) => row.active).length);
+    }
+    renderFirewallExport();
+    if (!blockedListEl) return;
+    if (!blockedIps.length) {
+      blockedListEl.innerHTML = '<p class="text-sm text-slate-300">No IPs on the blocklist.</p>';
+      return;
+    }
+
+    blockedListEl.innerHTML = blockedIps
+      .map(
+        (row) => `
+      <article class="w-full min-w-0 bg-slate-900/80 border border-slate-800 text-slate-100 rounded-xl p-4 flex flex-col gap-2.5">
+        <div class="flex items-start justify-between gap-2 min-w-0">
+          <div class="min-w-0 flex-1">
+            <h4 class="font-mono text-sm font-bold text-slate-100 break-all">${escapeHtml(row.ip_address)}</h4>
+            <p class="mt-0.5 text-xs text-slate-400 break-words">${escapeHtml(row.reason)}</p>
+          </div>
+          <span class="shrink-0 rounded-full px-2.5 py-0.5 text-[0.7rem] font-bold ${
+            row.active
+              ? 'border border-red-500/40 bg-red-500/20 text-red-300'
+              : 'border border-slate-700 bg-slate-800 text-slate-300'
+          }">
+            ${row.active ? `Blocked (${row.threat_level})` : 'Disabled'}
+          </span>
+        </div>
+        <div class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-2.5">
+          <span class="text-[0.7rem] text-slate-400">Hits: ${row.hit_count} • ${escapeHtml(formatDisplayDateTime(row.created_at))}</span>
+          <div class="flex gap-1.5">
+            <button type="button" data-ip-action="toggle" data-id="${escapeHtml(row.id)}" class="cursor-pointer rounded-md border border-cyan-500/40 bg-cyan-500/15 px-2.5 py-1 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/25">${row.active ? 'Unblock' : 'Re-block'}</button>
+            <button type="button" data-ip-action="delete" data-id="${escapeHtml(row.id)}" class="cursor-pointer rounded-md border border-red-500/40 bg-red-500/15 px-2.5 py-1 text-xs font-semibold text-red-300 hover:bg-red-500/25">Delete</button>
+          </div>
+        </div>
+      </article>
+    `,
+      )
+      .join('');
+  };
+
+  const renderEvents = () => {
+    if (eventsCountEl) eventsCountEl.textContent = String(securityEvents.length);
+    if (!eventsListEl) return;
+    if (!securityEvents.length) {
+      eventsListEl.innerHTML = '<p class="text-sm text-slate-300">No suspicious events recorded yet.</p>';
+      return;
+    }
+
+    eventsListEl.innerHTML = securityEvents
+      .map(
+        (ev) => `
+      <article class="w-full min-w-0 bg-slate-900/80 border border-slate-800 text-slate-100 rounded-xl p-4 flex flex-col gap-2">
+        <div class="flex items-start justify-between gap-2 min-w-0">
+          <div class="min-w-0 flex-1">
+            <h4 class="text-xs font-bold tracking-wider text-amber-300 uppercase">${escapeHtml(ev.event_type)}</h4>
+            <p class="mt-0.5 font-mono text-xs text-slate-200 break-all">IP: ${escapeHtml(ev.ip_address)} • ${escapeHtml(ev.path)}</p>
+          </div>
+          <span class="shrink-0 text-[0.68rem] text-slate-400">${escapeHtml(formatDisplayDateTime(ev.created_at))}</span>
+        </div>
+        <p class="text-xs text-slate-400 break-words">
+          ${ev.email_attempted ? `Email: ${escapeHtml(ev.email_attempted)} • ` : ''}${escapeHtml(ev.details || ev.user_agent)}
+        </p>
+        ${
+          ev.ip_address && ev.ip_address !== 'unknown'
+            ? `<div class="pt-1"><button type="button" data-quick-block-ip="${escapeHtml(ev.ip_address)}" data-quick-reason="${escapeHtml(ev.event_type)}" class="cursor-pointer rounded-md border border-red-500/40 bg-red-500/15 px-2.5 py-1 text-xs font-semibold text-red-300 hover:bg-red-500/25">Block ${escapeHtml(ev.ip_address)}</button></div>`
+            : ''
+        }
+      </article>
+    `,
+      )
+      .join('');
+  };
+
+  const loadSecurityData = async () => {
+    setStatus('Loading firewall & intrusion logs…');
+    const [ipRes, evRes] = await Promise.all([
+      supabase.from('blocked_ips').select('*').order('created_at', { ascending: false }),
+      supabase.from('security_events').select('*').order('created_at', { ascending: false }).limit(50),
+    ]);
+
+    if (ipRes.error || evRes.error) {
+      const err = ipRes.error || evRes.error;
+      setStatus(`Run 20261127_security_and_seo.sql in Supabase first (${err?.message ?? 'missing table'}).`, true);
+      return;
+    }
+
+    blockedIps = (ipRes.data ?? []) as BlockedIp[];
+    securityEvents = (evRes.data ?? []) as SecurityEvent[];
+    renderBlockedIps();
+    renderEvents();
+    setStatus('');
+  };
+
+  const blockIp = async (ip: string, reason: string, threatLevel: 'low' | 'medium' | 'high') => {
+    setStatus(`Blocking ${ip}…`);
+    const { error } = await supabase
+      .from('blocked_ips')
+      .upsert(
+        {
+          ip_address: ip.trim(),
+          reason: reason.trim(),
+          threat_level: threatLevel,
+          active: true,
+        },
+        { onConflict: 'ip_address' },
+      );
+
+    if (error) {
+      setStatus(`Block failed: ${error.message}`, true);
+      return;
+    }
+    await loadSecurityData();
+    setStatus(`Blocked ${ip}.`);
+  };
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!ipInput || !reasonInput || !threatSelect) return;
+    await blockIp(
+      ipInput.value,
+      reasonInput.value,
+      threatSelect.value as 'low' | 'medium' | 'high',
+    );
+    form.reset();
+  });
+
+  blockedListEl?.addEventListener('click', async (event) => {
+    const btn = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-ip-action]');
+    const id = btn?.dataset.id;
+    const action = btn?.dataset.ipAction;
+    if (!id || !action) return;
+
+    const row = blockedIps.find((item) => item.id === id);
+    if (!row) return;
+
+    if (action === 'toggle') {
+      const { error } = await supabase.from('blocked_ips').update({ active: !row.active }).eq('id', id);
+      if (error) {
+        setStatus(`Update failed: ${error.message}`, true);
+        return;
+      }
+      await loadSecurityData();
+      setStatus(`${row.ip_address} ${!row.active ? 'blocked' : 'unblocked'}.`);
+    } else if (action === 'delete') {
+      const { error } = await supabase.from('blocked_ips').delete().eq('id', id);
+      if (error) {
+        setStatus(`Delete failed: ${error.message}`, true);
+        return;
+      }
+      await loadSecurityData();
+      setStatus(`Removed ${row.ip_address}.`);
+    }
+  });
+
+  eventsListEl?.addEventListener('click', async (event) => {
+    const btn = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-quick-block-ip]');
+    const ip = btn?.dataset.quickBlockIp;
+    const reason = btn?.dataset.quickReason || 'Suspicious admin access attempt';
+    if (!ip) return;
+    await blockIp(ip, `Blocked from security log: ${reason}`, 'high');
+  });
+
+  refreshBtn?.addEventListener('click', () => void loadSecurityData());
+
+  copyRulesBtn?.addEventListener('click', async () => {
+    if (!exportEl?.textContent) return;
+    try {
+      await navigator.clipboard.writeText(exportEl.textContent);
+      setStatus('Firewall rules copied to clipboard.');
+    } catch {
+      setStatus('Clipboard copy blocked.', true);
+    }
+  });
+
+  clearEventsBtn?.addEventListener('click', async () => {
+    if (!window.confirm('Clear all recorded security events?')) return;
+    const { error } = await supabase.from('security_events').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    if (error) {
+      setStatus(`Could not clear log: ${error.message}`, true);
+      return;
+    }
+    await loadSecurityData();
+    setStatus('Security event log cleared.');
+  });
+
+  window.addEventListener('plextech:admin-auth', (event) => {
+    const detail = (event as CustomEvent<{ authenticated?: boolean }>).detail;
+    if (detail?.authenticated) {
+      void loadSecurityData();
+    } else {
+      blockedIps = [];
+      securityEvents = [];
+      renderBlockedIps();
+      renderEvents();
+    }
+  });
+</script>

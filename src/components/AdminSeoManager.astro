@@ -1,0 +1,239 @@
+<section class="admin-cms-panel w-full min-w-0" aria-labelledby="admin-seo-heading">
+  <div class="grid min-w-0 gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+    <div class="surface grid w-full min-w-0 gap-5 p-5 md:p-6">
+      <div class="border-b border-border pb-4">
+        <p class="eyebrow">SEO &amp; Google Search Console</p>
+        <h2 id="admin-seo-heading" class="mt-1.5 text-xl font-bold text-foreground">
+          Indexing, Dynamic Sitemap &amp; Google Console
+        </h2>
+        <p class="mt-1 text-xs text-muted">
+          Connect Google Search Console, inspect live mapped URLs, and auto-rebuild your static sitemap whenever new topics are published.
+        </p>
+      </div>
+
+      <div class="grid gap-3 sm:grid-cols-3">
+        <div class="rounded-xl border border-slate-800 bg-slate-900/80 p-4">
+          <p class="text-[0.7rem] font-semibold tracking-wider text-slate-400 uppercase">Static Pages</p>
+          <p id="seo-static-count" class="mt-1 text-2xl font-extrabold text-slate-100">12</p>
+        </div>
+        <div class="rounded-xl border border-slate-800 bg-slate-900/80 p-4">
+          <p class="text-[0.7rem] font-semibold tracking-wider text-slate-400 uppercase">Live Blog URLs</p>
+          <p id="seo-blog-count" class="mt-1 text-2xl font-extrabold text-cyan-300">0</p>
+        </div>
+        <div class="rounded-xl border border-slate-800 bg-slate-900/80 p-4">
+          <p class="text-[0.7rem] font-semibold tracking-wider text-slate-400 uppercase">Total Sitemap URLs</p>
+          <p id="seo-total-count" class="mt-1 text-2xl font-extrabold text-emerald-300">12</p>
+        </div>
+      </div>
+
+      <div class="grid gap-3 rounded-xl border border-slate-800 bg-slate-900/80 p-4">
+        <h3 class="text-sm font-bold text-slate-100">Google Search Console Connection</h3>
+        <p id="seo-gsc-status" class="text-xs text-slate-300"></p>
+        <div class="grid gap-2 text-xs text-slate-400">
+          <p>
+            1. Add <code class="rounded bg-slate-950 px-1.5 py-0.5 text-cyan-300">PUBLIC_GOOGLE_SITE_VERIFICATION=your-token</code> in Vercel/Netlify/Cloudflare environment variables (or <code class="rounded bg-slate-950 px-1.5 py-0.5 text-cyan-300">.env</code>).
+          </p>
+          <p>
+            2. In <a href="https://search.google.com/search-console" target="_blank" rel="noopener noreferrer" class="font-semibold text-cyan-300 underline">Google Search Console</a>, add property <code class="rounded bg-slate-950 px-1.5 py-0.5 text-slate-200">https://www.plextech.online/</code> and submit sitemaps:
+          </p>
+          <div class="flex flex-wrap gap-2 pt-1">
+            <code class="rounded-md border border-slate-700 bg-slate-950 px-2.5 py-1 text-xs text-cyan-300">https://www.plextech.online/sitemap.xml</code>
+            <code class="rounded-md border border-slate-700 bg-slate-950 px-2.5 py-1 text-xs text-cyan-300">https://www.plextech.online/sitemap-index.xml</code>
+            <code class="rounded-md border border-slate-700 bg-slate-950 px-2.5 py-1 text-xs text-slate-300">https://www.plextech.online/robots.txt</code>
+          </div>
+        </div>
+      </div>
+
+      <form id="seo-deploy-hook-form" class="grid gap-3 rounded-xl border border-slate-800 bg-slate-900/80 p-4">
+        <h3 class="text-sm font-bold text-slate-100">Auto-Map New Topics (Deploy Hook)</h3>
+        <p class="text-xs text-slate-400">
+          Paste your Vercel, Cloudflare Pages, or Netlify Deploy Hook URL so publishing a new blog post automatically rebuilds <code class="text-cyan-300">/sitemap.xml</code> and pre-renders <code class="text-cyan-300">/blog/&lt;slug&gt;/</code> for Googlebot.
+        </p>
+        <div class="flex flex-wrap gap-2">
+          <input
+            id="seo-deploy-hook-url"
+            type="url"
+            placeholder="https://api.vercel.com/v1/integrations/deploy/..."
+            class="min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100"
+          />
+          <button type="submit" class="btn btn-secondary min-h-9 cursor-pointer px-3 text-xs">
+            Save Hook
+          </button>
+          <button type="button" id="seo-trigger-rebuild-btn" class="btn btn-primary min-h-9 cursor-pointer px-3 text-xs">
+            Rebuild Sitemap Now ↗
+          </button>
+        </div>
+        <p id="seo-hook-status" class="min-h-4 text-xs text-slate-400" aria-live="polite"></p>
+      </form>
+    </div>
+
+    <aside class="surface flex w-full min-w-0 flex-col overflow-hidden">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
+        <div class="min-w-0">
+          <h3 class="text-base font-bold text-foreground">Live Dynamic Sitemap Preview</h3>
+          <p class="text-xs text-muted">Generated live from Supabase published posts</p>
+        </div>
+        <div class="flex flex-wrap gap-1.5">
+          <button type="button" id="seo-refresh-sitemap-btn" class="cursor-pointer rounded-md border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-100 hover:border-cyan-400">
+            Refresh
+          </button>
+          <button type="button" id="seo-copy-sitemap-btn" class="cursor-pointer rounded-md border border-cyan-500/40 bg-cyan-500/15 px-2.5 py-1 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/25">
+            Copy XML
+          </button>
+          <button type="button" id="seo-download-sitemap-btn" class="cursor-pointer rounded-md border border-emerald-500/40 bg-emerald-500/15 px-2.5 py-1 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/25">
+            Download
+          </button>
+        </div>
+      </div>
+
+      <div class="p-4">
+        <pre
+          id="seo-sitemap-preview"
+          class="max-h-[34rem] w-full overflow-auto rounded-xl border border-slate-800 bg-slate-950 p-4 font-mono text-[0.72rem] leading-relaxed text-cyan-200"
+        >Sign in to generate live sitemap XML…</pre>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<script>
+  import { supabase } from '../lib/supabase';
+  import { buildSitemapXml, STATIC_SITEMAP_ROUTES, type BlogPost } from '../lib/cms';
+
+  const staticCountEl = document.getElementById('seo-static-count');
+  const blogCountEl = document.getElementById('seo-blog-count');
+  const totalCountEl = document.getElementById('seo-total-count');
+  const gscStatusEl = document.getElementById('seo-gsc-status');
+  const hookForm = document.getElementById('seo-deploy-hook-form');
+  const hookInput = document.getElementById('seo-deploy-hook-url') as HTMLInputElement | null;
+  const triggerBtn = document.getElementById('seo-trigger-rebuild-btn') as HTMLButtonElement | null;
+  const hookStatusEl = document.getElementById('seo-hook-status');
+  const previewEl = document.getElementById('seo-sitemap-preview');
+  const refreshBtn = document.getElementById('seo-refresh-sitemap-btn');
+  const copyBtn = document.getElementById('seo-copy-sitemap-btn');
+  const downloadBtn = document.getElementById('seo-download-sitemap-btn');
+
+  const HOOK_STORAGE_KEY = 'plextech_deploy_hook_url';
+  let currentXml = '';
+
+  const setHookStatus = (msg: string, isError = false) => {
+    if (!hookStatusEl) return;
+    hookStatusEl.textContent = msg;
+    hookStatusEl.className = `min-h-4 text-xs ${isError ? 'text-red-300' : 'text-slate-300'}`;
+  };
+
+  const loadGscStatus = () => {
+    const token = import.meta.env.PUBLIC_GOOGLE_SITE_VERIFICATION?.trim();
+    if (!gscStatusEl) return;
+    if (token) {
+      gscStatusEl.innerHTML = `<span class="font-bold text-emerald-300">Verified meta tag active:</span> <code class="text-cyan-300">${token.slice(0, 14)}…</code>`;
+    } else {
+      gscStatusEl.innerHTML =
+        '<span class="font-bold text-amber-300">Not configured yet:</span> Set <code class="text-cyan-300">PUBLIC_GOOGLE_SITE_VERIFICATION</code> in your hosting environment variables to inject the Google verification meta tag automatically.';
+    }
+  };
+
+  const loadDeployHook = async () => {
+    const cached = localStorage.getItem(HOOK_STORAGE_KEY) || '';
+    if (hookInput && cached) hookInput.value = cached;
+    try {
+      const { data } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'deploy_hook_url')
+        .maybeSingle();
+      if (data?.value && hookInput) {
+        hookInput.value = String(data.value);
+        localStorage.setItem(HOOK_STORAGE_KEY, String(data.value));
+      }
+    } catch {
+      // Optional table before migration runs.
+    }
+  };
+
+  const refreshLiveSitemap = async () => {
+    if (previewEl) previewEl.textContent = 'Querying published topics from Supabase…';
+    const nowIso = new Date().toISOString();
+    const { data, error } = await supabase
+      .from('blog_posts')
+      .select('slug, updated_at, published_at, created_at')
+      .eq('published', true)
+      .lte('published_at', nowIso)
+      .order('published_at', { ascending: false });
+
+    const posts = !error && Array.isArray(data) ? (data as BlogPost[]) : [];
+    currentXml = buildSitemapXml(posts);
+
+    if (staticCountEl) staticCountEl.textContent = String(STATIC_SITEMAP_ROUTES.length);
+    if (blogCountEl) blogCountEl.textContent = String(posts.length);
+    if (totalCountEl) totalCountEl.textContent = String(STATIC_SITEMAP_ROUTES.length + posts.length);
+    if (previewEl) previewEl.textContent = currentXml;
+  };
+
+  hookForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const url = hookInput?.value.trim() || '';
+    if (url) {
+      localStorage.setItem(HOOK_STORAGE_KEY, url);
+    } else {
+      localStorage.removeItem(HOOK_STORAGE_KEY);
+    }
+    try {
+      await supabase
+        .from('site_settings')
+        .upsert({ key: 'deploy_hook_url', value: url, updated_at: new Date().toISOString() });
+    } catch {
+      // LocalStorage still keeps the hook if site_settings table is not yet created.
+    }
+    setHookStatus(url ? 'Deploy hook saved. New published blog posts will trigger auto-rebuild.' : 'Deploy hook cleared.');
+  });
+
+  triggerBtn?.addEventListener('click', async () => {
+    const url = hookInput?.value.trim() || localStorage.getItem(HOOK_STORAGE_KEY) || '';
+    if (!url) {
+      setHookStatus('Enter and save a Vercel/Cloudflare/Netlify Deploy Hook URL first.', true);
+      return;
+    }
+    triggerBtn.disabled = true;
+    setHookStatus('Triggering site rebuild for sitemap.xml & new blog routes…');
+    try {
+      await fetch(url, { method: 'POST', mode: 'no-cors' });
+      setHookStatus('Rebuild request sent to your host. Updated /sitemap.xml will be live once the build finishes.');
+    } catch (cause) {
+      setHookStatus(`Deploy hook request failed: ${cause instanceof Error ? cause.message : 'network error'}`, true);
+    }
+    triggerBtn.disabled = false;
+  });
+
+  refreshBtn?.addEventListener('click', () => void refreshLiveSitemap());
+
+  copyBtn?.addEventListener('click', async () => {
+    if (!currentXml) return;
+    try {
+      await navigator.clipboard.writeText(currentXml);
+      setHookStatus('Live sitemap.xml copied to clipboard.');
+    } catch {
+      setHookStatus('Clipboard copy blocked by browser.', true);
+    }
+  });
+
+  downloadBtn?.addEventListener('click', () => {
+    if (!currentXml) return;
+    const blob = new Blob([currentXml], { type: 'application/xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'sitemap.xml';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  window.addEventListener('plextech:admin-auth', (event) => {
+    const detail = (event as CustomEvent<{ authenticated?: boolean }>).detail;
+    if (detail?.authenticated) {
+      loadGscStatus();
+      void loadDeployHook();
+      void refreshLiveSitemap();
+    }
+  });
+</script>

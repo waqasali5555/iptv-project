@@ -55,6 +55,7 @@ const categories = [
         </div>
       </div>
 
+      <h2 class="sr-only">Supported Platforms and Infrastructure Technologies</h2>
       <p class="mt-5 text-sm text-muted">
         <span id="tech-count">{technologies.length}</span> technologies shown
       </p>
@@ -99,6 +100,11 @@ const categories = [
         }
       });
       count.textContent = n;
+    }
+    const initialQuery = new URLSearchParams(window.location.search).get('q');
+    if (initialQuery && input) {
+      input.value = initialQuery;
+      apply();
     }
     input.addEventListener('input', apply);
     buttons.forEach((button) =>
